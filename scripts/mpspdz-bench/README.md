@@ -217,13 +217,38 @@ at `N = 16` at the default batch size.
 
 ## Network emulation
 
-Both scripts apply `tc netem` when it is available, crossing the ping times
+Both scripts apply `tc netem` when they can, crossing the ping times
 `{1, 10, 100}` ms with bandwidths `{100 Mbit/s, 1 Gbit/s}` — Fhenix's grid —
 and pass `-d` so parties communicate pairwise rather than through a
 coordinator, matching its fully connected topology.
 
-`tc` needs Linux with `NET_ADMIN` and a kernel carrying `sch_netem`; it is
-absent on macOS and inside restricted containers. When it is missing the
-scripts say so, run every configuration at native loopback speed, and record
-`net_emulated=no` with the ping and bandwidth columns naming the condition
-that was *intended*. Those rows are not latency measurements.
+`tc` needs three things, and the scripts say which one is missing:
+
+1. **The binary.** `sudo apt install iproute2` (Debian/Ubuntu) or
+   `sudo dnf install iproute-tc` (Fedora/RHEL).
+2. **Root.** `tc qdisc add` is privileged. The scripts call `sudo tc`
+   automatically when not run as root; you may be prompted once. Running the
+   whole benchmark as root also works but is not necessary.
+3. **The `sch_netem` kernel module.** Present on a normal distro kernel, but
+   missing from minimal cloud images and most containers. Symptom:
+   `Error: Specified qdisc kind is unknown`. Fix:
+
+   ```sh
+   sudo apt install linux-modules-extra-$(uname -r)
+   sudo modprobe sch_netem
+   ```
+
+   `Operation not permitted` instead means the VM or container has no
+   `NET_ADMIN` capability — a Docker container needs `--cap-add=NET_ADMIN`,
+   and a hypervisor-level VM normally has it already.
+
+Check by hand with:
+
+```sh
+sudo tc qdisc add dev lo root netem delay 20ms && sudo tc qdisc del dev lo root
+```
+
+When any of the three is missing the scripts run every configuration at
+native loopback speed and record `net_emulated=no`, with the ping and
+bandwidth columns naming the condition that was *intended*. Those rows are
+not latency measurements and must not be reported as such.

@@ -30,14 +30,41 @@ cd "$MPSPDZ"
 CSV="$RESULTS/summary.csv"
 echo "protocol,parties,beta,ping_ms,bandwidth,net_emulated,batch,time_s,mb_party0,rounds,correct" > "$CSV"
 
+TC=""
+if command -v tc >/dev/null 2>&1; then
+    if [ "$(id -u)" -eq 0 ]; then
+        TC="tc"
+    elif command -v sudo >/dev/null 2>&1; then
+        TC="sudo tc"
+    fi
+fi
+
 HAVE_TC=0
-if command -v tc >/dev/null 2>&1 && tc qdisc add dev lo root netem delay 0ms >/dev/null 2>&1; then
-    tc qdisc del dev lo root >/dev/null 2>&1 || true
-    trap 'tc qdisc del dev lo root >/dev/null 2>&1 || true' EXIT
-    HAVE_TC=1
+TCERR=$(mktemp)
+if ! command -v tc >/dev/null 2>&1; then
+    echo "WARNING: tc not found. Install it:"
+    echo "             sudo apt install iproute2        # Debian/Ubuntu"
+    echo "             sudo dnf install iproute-tc      # Fedora/RHEL"
+elif [ -z "$TC" ]; then
+    echo "WARNING: tc needs root and sudo is unavailable. Re-run this script as root."
+elif ! $TC qdisc add dev lo root netem delay 1ms rate 1gbit 2>"$TCERR"; then
+    echo "WARNING: tc could not install a netem qdisc:"
+    sed 's/^/             /' "$TCERR"
+    echo "         'qdisc kind is unknown' -> the kernel has no sch_netem module:"
+    echo "             sudo apt install linux-modules-extra-\$(uname -r)"
+    echo "             sudo modprobe sch_netem"
+    echo "         'Operation not permitted' -> this VM/container has no NET_ADMIN."
 else
-    echo "WARNING: tc/netem unavailable; running at native loopback speed."
-    echo "         ping/bandwidth columns record the intended condition, not an applied one."
+    $TC qdisc del dev lo root >/dev/null 2>&1 || true
+    HAVE_TC=1
+fi
+rm -f "$TCERR"
+
+if [ "$HAVE_TC" -eq 1 ]; then
+    trap '$TC qdisc del dev lo root >/dev/null 2>&1 || true' EXIT
+else
+    echo "         Running at native loopback speed; ping/bandwidth columns record"
+    echo "         the intended condition, not an applied one."
 fi
 
 run_one() {
@@ -69,8 +96,8 @@ for PING in $PINGS; do
     for BW in $BANDWIDTHS; do
         EMU=no
         if [ "$HAVE_TC" -eq 1 ]; then
-            tc qdisc del dev lo root >/dev/null 2>&1 || true
-            tc qdisc add dev lo root netem delay "$(awk "BEGIN{print $PING/2}")ms" rate "$BW"
+            $TC qdisc del dev lo root >/dev/null 2>&1 || true
+            $TC qdisc add dev lo root netem delay "$(awk "BEGIN{print $PING/2}")ms" rate "$BW"
             EMU=yes
         fi
         for N in $PARTIES; do
