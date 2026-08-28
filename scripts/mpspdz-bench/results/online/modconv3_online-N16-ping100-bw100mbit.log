@@ -1,32 +1,306 @@
-Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 0 -N 16 -d modconv3_online -pn 13005 -h localhost -N 16
-Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 1 -N 16 -d modconv3_online -pn 13005 -h localhost -N 16
-Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 2 -N 16 -d modconv3_online -pn 13005 -h localhost -N 16
-Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 3 -N 16 -d modconv3_online -pn 13005 -h localhost -N 16
-Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 4 -N 16 -d modconv3_online -pn 13005 -h localhost -N 16
-Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 5 -N 16 -d modconv3_online -pn 13005 -h localhost -N 16
-Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 6 -N 16 -d modconv3_online -pn 13005 -h localhost -N 16
-Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 7 -N 16 -d modconv3_online -pn 13005 -h localhost -N 16
-Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 8 -N 16 -d modconv3_online -pn 13005 -h localhost -N 16
-Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 9 -N 16 -d modconv3_online -pn 13005 -h localhost -N 16
-Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 10 -N 16 -d modconv3_online -pn 13005 -h localhost -N 16
-Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 11 -N 16 -d modconv3_online -pn 13005 -h localhost -N 16
-Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 12 -N 16 -d modconv3_online -pn 13005 -h localhost -N 16
-Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 13 -N 16 -d modconv3_online -pn 13005 -h localhost -N 16
-Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 14 -N 16 -d modconv3_online -pn 13005 -h localhost -N 16
-Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 15 -N 16 -d modconv3_online -pn 13005 -h localhost -N 16
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 0 -N 16 -d modconv3_online -pn 10043 -h localhost -N 16
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 1 -N 16 -d modconv3_online -pn 10043 -h localhost -N 16
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 2 -N 16 -d modconv3_online -pn 10043 -h localhost -N 16
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 3 -N 16 -d modconv3_online -pn 10043 -h localhost -N 16
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 4 -N 16 -d modconv3_online -pn 10043 -h localhost -N 16
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 5 -N 16 -d modconv3_online -pn 10043 -h localhost -N 16
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 6 -N 16 -d modconv3_online -pn 10043 -h localhost -N 16
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 7 -N 16 -d modconv3_online -pn 10043 -h localhost -N 16
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 8 -N 16 -d modconv3_online -pn 10043 -h localhost -N 16
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 9 -N 16 -d modconv3_online -pn 10043 -h localhost -N 16
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 10 -N 16 -d modconv3_online -pn 10043 -h localhost -N 16
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 11 -N 16 -d modconv3_online -pn 10043 -h localhost -N 16
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 12 -N 16 -d modconv3_online -pn 10043 -h localhost -N 16
 Using SPDZ2k security parameter 64
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 13 -N 16 -d modconv3_online -pn 10043 -h localhost -N 16
 Using statistical security parameter 40
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 14 -N 16 -d modconv3_online -pn 10043 -h localhost -N 16
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 15 -N 16 -d modconv3_online -pn 10043 -h localhost -N 16
 Trying to run 64-bit computation
-Starting timer 1 at 0 (0 MB, 0 rounds, 0 CPU seconds) after 5e-06
-Stopped timer 1 at 1.4996 (81.4922 MB, 351 rounds, 0.613072 CPU seconds)
-converted value: 3807204889373246480
-expected value: 3807204889373246480
-Tinier open counter: 0
-SPDZ gf2n_long open counter: 0
-SPDZ2^(64+64) open counter: 9
-The following benchmarks are including preprocessing (offline phase).
-Time = 2.64091 seconds 
-Time1 = 1.4996 seconds (81.4922 MB, 351 rounds, 0.613072 CPU seconds)
-Data sent = 84.342 MB in ~925 rounds (party 0 only; use '-v' for more details)
-Global data sent = 1541.83 MB (all parties)
-Communication time accounts for more than 95 percent of total time (9.91516 seconds). This might be because of the computation and the network setting, but it could also be product of the optimization trade-off during compilation. See https://mp-spdz.readthedocs.io/en/latest/troubleshooting.html#high-number-of-rounds-or-slow-wan-execution
+Starting timer 1 at 0 (0 MB, 0 rounds) after 5.1617e-05
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  Ubuntu-2204-jammy-amd64-base : Non-blocking receiving error : Connection reset by peer
+/home/mpspdz/mp-spdz-0.3.8/Scripts/run-common.sh: line 90: 539594 Aborted                 (core dumped) $my_prefix $SPDZROOT/$bin $i $params 2>&1
+     539595 Done                    | { if test "$BENCH"; then
+    if test $i = $front_player; then
+        tee -a $log;
+    else
+        cat >> $log;
+    fi;
+else
+    if test $i = $front_player; then
+        tee $log;
+    else
+        cat > $log;
+    fi;
+fi; }
+/home/mpspdz/mp-spdz-0.3.8/Scripts/run-common.sh: line 90: 539596 Aborted                 (core dumped) $my_prefix $SPDZROOT/$bin $i $params 2>&1
+     539598 Done                    | { if test "$BENCH"; then
+    if test $i = $front_player; then
+        tee -a $log;
+    else
+        cat >> $log;
+    fi;
+else
+    if test $i = $front_player; then
+        tee $log;
+    else
+        cat > $log;
+    fi;
+fi; }
+/home/mpspdz/mp-spdz-0.3.8/Scripts/run-common.sh: line 90: 539599 Aborted                 (core dumped) $my_prefix $SPDZROOT/$bin $i $params 2>&1
+     539600 Done                    | { if test "$BENCH"; then
+    if test $i = $front_player; then
+        tee -a $log;
+    else
+        cat >> $log;
+    fi;
+else
+    if test $i = $front_player; then
+        tee $log;
+    else
+        cat > $log;
+    fi;
+fi; }
+/home/mpspdz/mp-spdz-0.3.8/Scripts/run-common.sh: line 90: 539602 Aborted                 (core dumped) $my_prefix $SPDZROOT/$bin $i $params 2>&1
+     539603 Done                    | { if test "$BENCH"; then
+    if test $i = $front_player; then
+        tee -a $log;
+    else
+        cat >> $log;
+    fi;
+else
+    if test $i = $front_player; then
+        tee $log;
+    else
+        cat > $log;
+    fi;
+fi; }
+/home/mpspdz/mp-spdz-0.3.8/Scripts/run-common.sh: line 90: 539605 Aborted                 (core dumped) $my_prefix $SPDZROOT/$bin $i $params 2>&1
+     539606 Done                    | { if test "$BENCH"; then
+    if test $i = $front_player; then
+        tee -a $log;
+    else
+        cat >> $log;
+    fi;
+else
+    if test $i = $front_player; then
+        tee $log;
+    else
+        cat > $log;
+    fi;
+fi; }
+/home/mpspdz/mp-spdz-0.3.8/Scripts/run-common.sh: line 90: 539608 Aborted                 (core dumped) $my_prefix $SPDZROOT/$bin $i $params 2>&1
+     539610 Done                    | { if test "$BENCH"; then
+    if test $i = $front_player; then
+        tee -a $log;
+    else
+        cat >> $log;
+    fi;
+else
+    if test $i = $front_player; then
+        tee $log;
+    else
+        cat > $log;
+    fi;
+fi; }
+/home/mpspdz/mp-spdz-0.3.8/Scripts/run-common.sh: line 90: 539611 Aborted                 (core dumped) $my_prefix $SPDZROOT/$bin $i $params 2>&1
+     539612 Done                    | { if test "$BENCH"; then
+    if test $i = $front_player; then
+        tee -a $log;
+    else
+        cat >> $log;
+    fi;
+else
+    if test $i = $front_player; then
+        tee $log;
+    else
+        cat > $log;
+    fi;
+fi; }
+/home/mpspdz/mp-spdz-0.3.8/Scripts/run-common.sh: line 90: 539614 Aborted                 (core dumped) $my_prefix $SPDZROOT/$bin $i $params 2>&1
+     539615 Done                    | { if test "$BENCH"; then
+    if test $i = $front_player; then
+        tee -a $log;
+    else
+        cat >> $log;
+    fi;
+else
+    if test $i = $front_player; then
+        tee $log;
+    else
+        cat > $log;
+    fi;
+fi; }
+/home/mpspdz/mp-spdz-0.3.8/Scripts/run-common.sh: line 90: 539617 Aborted                 (core dumped) $my_prefix $SPDZROOT/$bin $i $params 2>&1
+     539618 Done                    | { if test "$BENCH"; then
+    if test $i = $front_player; then
+        tee -a $log;
+    else
+        cat >> $log;
+    fi;
+else
+    if test $i = $front_player; then
+        tee $log;
+    else
+        cat > $log;
+    fi;
+fi; }
+/home/mpspdz/mp-spdz-0.3.8/Scripts/run-common.sh: line 90: 539620 Aborted                 (core dumped) $my_prefix $SPDZROOT/$bin $i $params 2>&1
+     539622 Done                    | { if test "$BENCH"; then
+    if test $i = $front_player; then
+        tee -a $log;
+    else
+        cat >> $log;
+    fi;
+else
+    if test $i = $front_player; then
+        tee $log;
+    else
+        cat > $log;
+    fi;
+fi; }
+/home/mpspdz/mp-spdz-0.3.8/Scripts/run-common.sh: line 90: 539623 Aborted                 (core dumped) $my_prefix $SPDZROOT/$bin $i $params 2>&1
+     539624 Done                    | { if test "$BENCH"; then
+    if test $i = $front_player; then
+        tee -a $log;
+    else
+        cat >> $log;
+    fi;
+else
+    if test $i = $front_player; then
+        tee $log;
+    else
+        cat > $log;
+    fi;
+fi; }
+/home/mpspdz/mp-spdz-0.3.8/Scripts/run-common.sh: line 90: 539628 Aborted                 (core dumped) $my_prefix $SPDZROOT/$bin $i $params 2>&1
+     539636 Done                    | { if test "$BENCH"; then
+    if test $i = $front_player; then
+        tee -a $log;
+    else
+        cat >> $log;
+    fi;
+else
+    if test $i = $front_player; then
+        tee $log;
+    else
+        cat > $log;
+    fi;
+fi; }
+/home/mpspdz/mp-spdz-0.3.8/Scripts/run-common.sh: line 90: 539657 Aborted                 (core dumped) $my_prefix $SPDZROOT/$bin $i $params 2>&1
+     539670 Done                    | { if test "$BENCH"; then
+    if test $i = $front_player; then
+        tee -a $log;
+    else
+        cat >> $log;
+    fi;
+else
+    if test $i = $front_player; then
+        tee $log;
+    else
+        cat > $log;
+    fi;
+fi; }
+/home/mpspdz/mp-spdz-0.3.8/Scripts/run-common.sh: line 90: 539691 Aborted                 (core dumped) $my_prefix $SPDZROOT/$bin $i $params 2>&1
+     539694 Done                    | { if test "$BENCH"; then
+    if test $i = $front_player; then
+        tee -a $log;
+    else
+        cat >> $log;
+    fi;
+else
+    if test $i = $front_player; then
+        tee $log;
+    else
+        cat > $log;
+    fi;
+fi; }
+/home/mpspdz/mp-spdz-0.3.8/Scripts/run-common.sh: line 90: 539698 Aborted                 (core dumped) $my_prefix $SPDZROOT/$bin $i $params 2>&1
+     539704 Done                    | { if test "$BENCH"; then
+    if test $i = $front_player; then
+        tee -a $log;
+    else
+        cat >> $log;
+    fi;
+else
+    if test $i = $front_player; then
+        tee $log;
+    else
+        cat > $log;
+    fi;
+fi; }
+/home/mpspdz/mp-spdz-0.3.8/Scripts/run-common.sh: line 90: 539717 Aborted                 (core dumped) $my_prefix $SPDZROOT/$bin $i $params 2>&1
+     539721 Done                    | { if test "$BENCH"; then
+    if test $i = $front_player; then
+        tee -a $log;
+    else
+        cat >> $log;
+    fi;
+else
+    if test $i = $front_player; then
+        tee $log;
+    else
+        cat > $log;
+    fi;
+fi; }
+=== Party 1
+Starting timer 1 at 0 (0 MB, 0 rounds) after 2.9582e-05
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  Ubuntu-2204-jammy-amd64-base : Receiving error - 1 : Connection reset by peer
+=== Party 2
+Starting timer 1 at 0 (0 MB, 0 rounds) after 2.3104e-05
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  Ubuntu-2204-jammy-amd64-base : Non-blocking receiving error : Connection reset by peer
+=== Party 3
+Starting timer 1 at 0 (0 MB, 0 rounds) after 2.0053e-05
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  Ubuntu-2204-jammy-amd64-base : Non-blocking receiving error : Connection reset by peer
+=== Party 4
+Starting timer 1 at 0 (0 MB, 0 rounds) after 3.1992e-05
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  Ubuntu-2204-jammy-amd64-base : Receiving error - 1 : Connection timed out
+=== Party 5
+Starting timer 1 at 0 (0 MB, 0 rounds) after 3.9399e-05
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  Ubuntu-2204-jammy-amd64-base : Receiving error - 1 : Connection timed out
+=== Party 6
+Starting timer 1 at 0 (0 MB, 0 rounds) after 3.047e-05
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  Ubuntu-2204-jammy-amd64-base : Receiving error - 1 : Connection timed out
+=== Party 7
+Starting timer 1 at 0 (0 MB, 0 rounds) after 1.8409e-05
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  Ubuntu-2204-jammy-amd64-base : Non-blocking receiving error : Connection reset by peer
+=== Party 8
+Starting timer 1 at 0 (0 MB, 0 rounds) after 1.8868e-05
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  Ubuntu-2204-jammy-amd64-base : Receiving error - 1 : Connection timed out
+=== Party 9
+Starting timer 1 at 0 (0 MB, 0 rounds) after 2.2419e-05
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  Ubuntu-2204-jammy-amd64-base : Receiving error - 1 : Connection reset by peer
+=== Party 10
+Starting timer 1 at 0 (0 MB, 0 rounds) after 2.35e-05
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  Ubuntu-2204-jammy-amd64-base : Non-blocking receiving error : Connection reset by peer
+=== Party 11
+Starting timer 1 at 0 (0 MB, 0 rounds) after 3.0008e-05
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  Ubuntu-2204-jammy-amd64-base : Receiving error - 1 : Connection reset by peer
+=== Party 12
+Starting timer 1 at 0 (0 MB, 0 rounds) after 2.0829e-05
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  Ubuntu-2204-jammy-amd64-base : Non-blocking receiving error : Connection reset by peer
+=== Party 13
+Starting timer 1 at 0 (0 MB, 0 rounds) after 3.2165e-05
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  Ubuntu-2204-jammy-amd64-base : Non-blocking receiving error : Connection reset by peer
+=== Party 14
+Starting timer 1 at 0 (0 MB, 0 rounds) after 1.9865e-05
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  Ubuntu-2204-jammy-amd64-base : Receiving error - 1 : Connection reset by peer
+=== Party 15
+Starting timer 1 at 0 (0 MB, 0 rounds) after 2.99e-05
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  Ubuntu-2204-jammy-amd64-base : Receiving error - 1 : Connection reset by peer

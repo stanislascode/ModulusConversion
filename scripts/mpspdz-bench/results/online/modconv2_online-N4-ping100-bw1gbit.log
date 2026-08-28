@@ -1,19 +1,19 @@
-Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 0 -N 4 -d modconv2_online-4 -pn 19780 -h localhost -N 4
-Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 1 -N 4 -d modconv2_online-4 -pn 19780 -h localhost -N 4
-Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 2 -N 4 -d modconv2_online-4 -pn 19780 -h localhost -N 4
-Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 3 -N 4 -d modconv2_online-4 -pn 19780 -h localhost -N 4
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 0 -N 4 -d modconv2_online-4-8 -pn 16434 -h localhost -N 4
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 1 -N 4 -d modconv2_online-4-8 -pn 16434 -h localhost -N 4
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 2 -N 4 -d modconv2_online-4-8 -pn 16434 -h localhost -N 4
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 3 -N 4 -d modconv2_online-4-8 -pn 16434 -h localhost -N 4
 Using SPDZ2k security parameter 64
 Using statistical security parameter 40
 Trying to run 64-bit computation
-Starting timer 1 at 0 (0 MB, 0 rounds, 0 CPU seconds) after 3e-06
-Stopped timer 1 at 0.002356 (0.000204 MB, 5 rounds, 0.000883 CPU seconds)
-converted value: 2003761186733999672
-expected value: 2003761186733999672
+Starting timer 1 at 0 (0 MB, 0 rounds) after 2.23e-05
+Stopped timer 1 at 0.300533 (0.00036 MB, 5 rounds)
+converted value: 3511963772669674329
+expected value: 3511963772669674329
 Tinier open counter: 0
 SPDZ gf2n_long open counter: 0
 SPDZ2^(64+64) open counter: 3
 The following benchmarks are including preprocessing (offline phase).
-Time = 0.062046 seconds 
-Time1 = 0.002356 seconds (0.000204 MB, 5 rounds, 0.000883 CPU seconds)
-Data sent = 0.226752 MB in ~112 rounds (party 0 only; use '-v' for more details)
-Global data sent = 9.69259 MB (all parties)
+Time = 7.68517 seconds 
+Time1 = 0.300533 seconds (0.00036 MB, 5 rounds)
+Data sent = 30.9559 MB in ~240 rounds (party 0 only; use '-v' for more details)
+Global data sent = 123.822 MB (all parties)

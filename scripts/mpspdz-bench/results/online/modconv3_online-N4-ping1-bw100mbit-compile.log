@@ -3,10 +3,9 @@ Default security parameter for compilation: 40
 Compiling file Programs/Source/modconv3_online.mpc
 Writing to Programs/Schedules/modconv3_online.sch
 Writing to Programs/Bytecode/modconv3_online-0.bc
-Hash: d9d0b5c3d309a170527fcedb4b5ca092920b01bd2c94568a51c742ea60e730f8
+Hash: 65ceb57a52885894f9f31dcb3dca3753963e3c53796d27ebd6a24fb279996608
 Program requires at most:
           65 integer inputs from player 0
            3 integer opens
          315 integer triples
-         315 integer simple multiplications
           10 virtual machine rounds
