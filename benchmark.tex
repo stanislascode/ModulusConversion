@@ -1,0 +1,182 @@
+\section{Implementation and Evaluation}
+\label{sec:benchmark}
+
+For an empirical evaluation, we implemented all three of our modulus-conversion protocols by realizing $\func_\abb$ for a dishonest majority, using the SPDZ2k protocol~\cite{C:CDESX18}, i.e., authenticated additive secret sharing over $\ints_{2^\kappa}$.
+This places our numbers under the same security model as the two baselines we compare against: Noah's Ark~\cite{EPRINT:DDEMOR23} and Fhenix~\cite{CCS:ZZLP25} are both dishonest-majority protocols, and instantiating $\func_\abb$ with an honest-majority scheme would understate our costs.
+Following Fhenix, we implemented the offline and online parts of our protocols separately:
+\begin{enumerate}
+    \item \emph{Offline phase.}
+        This is implemented using the MP-SPDZ library~\cite{EPRINT:Keller20}.
+        In this phase, all correlated randomness specific to a modulus conversion is prepared: the shared mask $\shared{m}_{q'}$ and the correction table $\shared{u_0}_q, \dots, \shared{u_{\beta-1}}_q$ for $\Pi_\mathsf{ModConv1}$ (\cref{protocol:modconv1-preproc}) and $\Pi_\mathsf{ModConv2}$ (\cref{protocol:modconv2-preproc}), and the shared mask together with its bit decomposition for $\Pi_\mathsf{ModConv3}$ (\cref{protocol:modconv3-preproc}).
+    \item \emph{Online phase.}
+        This is likewise implemented in MP-SPDZ, so that both phases are measured by the same instrumentation and under the same wire protocol.
+        Mirroring Fhenix's design, where precomputed Sign and ModLTZ gates are loaded into memory at the start, the preprocessed values are handed to the parties by a trusted dealer at the beginning of the run and the corresponding cost is excluded from the reported online figures; only the conversion itself and the final opening are measured.
+\end{enumerate}
+
+All benchmarks are run on a single machine, with the \texttt{tc} utility used to emulate network conditions and constraints for both phases.
+This utility allows precise control over network behavior, such as introducing configurable delays and bandwidth limitations.
+As in Fhenix, the emulated network has a fully connected topology of nodes using TCP for pairwise communication; concretely, we pass MP-SPDZ's \texttt{-d} (direct communication) flag, so that parties communicate pairwise rather than relaying through a coordinator, matching that topology.
+
+To compare directly with Fhenix, and through it with the state of the art~\cite{EPRINT:DDEMOR23}, we use exactly the same \gls{lwe} parameters $(n, q, p) = (1024, 2^{64}, 2)$, hence $k = 64$, $m = 1$, $l = 63$, which are also commonly used for TFHE~\cite{JC:CGGI20} in commercial implementations.
+We evaluate the same decryption step Fhenix benchmarks: given a threshold-shared \gls{lwe} ciphertext, the shared noisy inner product $\shared{z}_q = \shared{\langle c, s \rangle}_q$ satisfies $z = \mu \cdot (q/p) + e$, and recovering $\mu$ amounts to removing the noise term $e$.
+Where Fhenix removes it with a small number of preprocessed comparison-type gates, we obtain shares of $e$ modulo a small $q' \mid q$ for free via $\DivModConv$, convert them back up to the ciphertext modulus $q$ with one of our protocols, and subtract.
+Since the noise term is bounded by construction (it lies in a public interval fixed by the scheme's parameters), the precondition of $\Pi_\mathsf{ModConv1}^{q,t,\beta}$ (\cref{protocol:modconv1}) and of $\Pi_\mathsf{ModConv2}^{q,t,\beta}$ (\cref{protocol:modconv2}) is met without any extra assumption; we run $\Pi_\mathsf{ModConv3}^{q,t}$ (\cref{protocol:modconv3}) as well, as a second data point covering settings where that bound is inconvenient to guarantee.
+We use the same party counts $N \in \{4, 8, 16\}$ as Fhenix, and cross the same ping times $\{1, 10, 100\}\,\mathrm{ms}$ with the same bandwidths $\{100\,\mathrm{Mbit/s}, 1\,\mathrm{Gbit/s}\}$.
+
+The online phase of each protocol admits an exact round count, which we state here since it is independent of the machine and of MP-SPDZ's instrumentation.
+$\Pi_\mathsf{ModConv1}$ and $\Pi_\mathsf{ModConv2}$ perform a single public opening for the conversion itself, plus the one opening that reveals the reconstructed plaintext, for two sequential openings in total and no secure multiplications at all.
+$\Pi_\mathsf{ModConv3}$ performs one additional opening inside its masked comparison, for three in total.
+For reference, Fhenix's online phase performs three sequential openings, plus two further rounds of authenticity checks in their implementation.
+
+\begin{table}[tbp]
+    \caption{%
+        Comparison of latency and throughput for $4$ parties with $1$~ms ping time and $1$~Gbit bandwidth (online phase only), following \cite[Table~1]{CCS:ZZLP25}.
+        Baseline entries are taken from the cited papers; our entries are pending the runs described in this section.%
+    }
+    \label{tab:benchmark-headline}
+    \centering
+    \small
+    \begin{tabular}{@{}lccc@{}}
+        \toprule
+        Protocol & Online openings & Latency (ms) & Throughput (Dec/sec) \\
+        \midrule
+        Noah's Ark~\cite{EPRINT:DDEMOR23} & --- & $315.62$ & $3.18$ \\
+        Fhenix~\cite{CCS:ZZLP25}          & $3$ & $8.48$   & $64\,319$ \\
+        \midrule
+        Ours, $\Pi_\mathsf{ModConv1}$ & $2$ & --- & --- \\
+        Ours, $\Pi_\mathsf{ModConv2}$ & $2$ & --- & --- \\
+        Ours, $\Pi_\mathsf{ModConv3}$ & $3$ & --- & --- \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Different Network Conditions}
+\label{sec:benchmark-network}
+
+\Cref{tab:benchmark-latency} shows how the end-to-end latency of the online phase changes according to the number of parties, or under increased network latency.
+As in Fhenix, bandwidth is not expected to affect the latency of a single decryption, since throughout the online phase the parties exchange only a few hundred bytes; the network latency does have an effect, because the online phase performs two (respectively three) sequential public openings.
+\Cref{tab:benchmark-throughput} reports throughput under batching across the same grid of conditions.
+
+\begin{table}[tbp]
+    \caption{%
+        Time (in ms) of the online conversion and opening, for a single ciphertext, following \cite[Table~2]{CCS:ZZLP25}.
+        Every entry is a placeholder (\textbf{---}) pending the runs described in this section.%
+    }
+    \label{tab:benchmark-latency}
+    \centering
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \begin{tabular}{@{}llccc@{}}
+        \toprule
+        Protocol & Ping time & $4$ Parties & $8$ Parties & $16$ Parties \\
+        \midrule
+        \multirow{3}{*}{$\Pi_\mathsf{ModConv1}$}
+            & $1$ ms   & --- & --- & --- \\
+            & $10$ ms  & --- & --- & --- \\
+            & $100$ ms & --- & --- & --- \\
+        \midrule
+        \multirow{3}{*}{$\Pi_\mathsf{ModConv2}$}
+            & $1$ ms   & --- & --- & --- \\
+            & $10$ ms  & --- & --- & --- \\
+            & $100$ ms & --- & --- & --- \\
+        \midrule
+        \multirow{3}{*}{$\Pi_\mathsf{ModConv3}$}
+            & $1$ ms   & --- & --- & --- \\
+            & $10$ ms  & --- & --- & --- \\
+            & $100$ ms & --- & --- & --- \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{table}[tbp]
+    \caption{%
+        Throughput (Dec/sec) of the online phase under varying network conditions, measured across different numbers of parties ($4$, $8$, $16$), bandwidths ($100$ Mbit/sec, $1$ Gbit/sec), and ping times ($1$, $10$ and $100$ ms), following \cite[Table~3]{CCS:ZZLP25}.
+        Every entry is a placeholder (\textbf{---}) pending the runs described in this section.%
+    }
+    \label{tab:benchmark-throughput}
+    \centering
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \begin{tabular}{@{}llcccccc@{}}
+        \toprule
+        \multirow{2}{*}{Protocol}
+            & \multirow{2}{*}{Ping}
+            & \multicolumn{3}{c}{$100$ Mbit/sec}
+            & \multicolumn{3}{c}{$1$ Gbit/sec} \\
+        \cmidrule(lr){3-5}\cmidrule(lr){6-8}
+            & & $4$ & $8$ & $16$ & $4$ & $8$ & $16$ \\
+        \midrule
+        \multirow{3}{*}{$\Pi_\mathsf{ModConv1}$}
+            & $1$ ms   & --- & --- & --- & --- & --- & --- \\
+            & $10$ ms  & --- & --- & --- & --- & --- & --- \\
+            & $100$ ms & --- & --- & --- & --- & --- & --- \\
+        \midrule
+        \multirow{3}{*}{$\Pi_\mathsf{ModConv2}$}
+            & $1$ ms   & --- & --- & --- & --- & --- & --- \\
+            & $10$ ms  & --- & --- & --- & --- & --- & --- \\
+            & $100$ ms & --- & --- & --- & --- & --- & --- \\
+        \midrule
+        \multirow{3}{*}{$\Pi_\mathsf{ModConv3}$}
+            & $1$ ms   & --- & --- & --- & --- & --- & --- \\
+            & $10$ ms  & --- & --- & --- & --- & --- & --- \\
+            & $100$ ms & --- & --- & --- & --- & --- & --- \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Preprocessing}
+\label{sec:benchmark-preproc}
+
+To empirically benchmark our preprocessing protocols, we implemented them in MP-SPDZ~\cite{EPRINT:Keller20} on top of its SPDZ2k implementation.
+As Fhenix does, we separate out the cost to generate shared random bits and multiplication triples, since there are many different ways to do this, and we run these tests under a single fixed network condition, $1$~ms ping time and $1$~Gbit/sec bandwidth.
+Unlike Fhenix, whose preprocessing benchmark is reported for the MP-SPDZ default of two parties, our preprocessing cost depends on $N$ for $\Pi_\mathsf{ModConv2}$ (whose masks are per-party), so we report $N \in \{2, 4, 8, 16\}$; the $N = 2$ row is the one directly comparable to \cite[Table~5]{CCS:ZZLP25}.
+\Cref{tab:benchmark-preproc} shows the cost to produce the preprocessing material for one modulus conversion, normalized per thousand decryptions to match Fhenix's reporting.
+
+\begin{table}[tbp]
+    \caption{%
+        Costs (ignoring triple and random-bit generation) of our preprocessing protocols, per thousand decryptions, following \cite[Table~5]{CCS:ZZLP25}.
+        The multiplication column is the number of secure multiplications the protocol issues per conversion, as reported by the MP-SPDZ compiler; time and communication entries are placeholders (\textbf{---}) pending the runs described in this section.%
+    }
+    \label{tab:benchmark-preproc}
+    \centering
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \begin{tabular}{@{}llccc@{}}
+        \toprule
+        Protocol & Parties & Mults/conv. & Time (sec) & Data (MB) \\
+        \midrule
+        \multirow{4}{*}{$\Pi_\mathsf{ModConv1}$}
+            & $2$  & $0$ & --- & --- \\
+            & $4$  & $0$ & --- & --- \\
+            & $8$  & $0$ & --- & --- \\
+            & $16$ & $0$ & --- & --- \\
+        \midrule
+        \multirow{4}{*}{$\Pi_\mathsf{ModConv2}$}
+            & $2$  & $285$ & --- & --- \\
+            & $4$  & $451$ & --- & --- \\
+            & $8$  & $789$ & --- & --- \\
+            & $16$ & ---   & --- & --- \\
+        \midrule
+        \multirow{4}{*}{$\Pi_\mathsf{ModConv3}$}
+            & $2$  & $0$ & --- & --- \\
+            & $4$  & $0$ & --- & --- \\
+            & $8$  & $0$ & --- & --- \\
+            & $16$ & $0$ & --- & --- \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\paragraph{Triple-generation communication.}
+Our preprocessing protocols use secure multiplications and random-bit generation via $\func_\abb$.
+For $\Pi_\mathsf{ModConv1}$ and $\Pi_\mathsf{ModConv3}$ with $q$ and $t$ both powers of two, the preprocessing uses only shared random bits and no secure multiplications at all: the $\beta = 2$ specialization of \cref{protocol:modconv1-preproc} obtains its correction table from a single random bit and local linear combinations, and \cref{protocol:modconv3-preproc} needs only the bits of the mask.
+$\Pi_\mathsf{ModConv2}$ is the exception, since its per-party masks must be combined, and its multiplication count grows with $N$ as reported in \cref{tab:benchmark-preproc}.
+In SPDZ2k, as in SPDZ more generally, each multiplication consumes one Beaver triple.
+Taking the same state-of-the-art figure Fhenix uses for maliciously secure triple generation, Multipars~\cite{CCS:HOSS23} at an amortized $14.9$ kbit per triple per party, the triples for one $\Pi_\mathsf{ModConv2}$ conversion cost roughly $0.53$ MB of communication per party at $N = 4$, against the approximately $4.5$ MB per decryption that Fhenix reports for its own $2478$ multiplications.
+For $\Pi_\mathsf{ModConv1}$ and $\Pi_\mathsf{ModConv3}$ this cost is zero.
+
+\claude{%
+Every timing and throughput cell above is a placeholder rather than a number I measured, and deliberately so: the numbers I could produce in this environment came from a two-core sandbox with no working \texttt{tc}/\texttt{netem} (the kernel there has no \texttt{sch\_netem} module), so they would match neither Fhenix's hardware nor its emulated network, and reporting them as if they did would be misleading.
+The multiplication counts and opening counts are different in kind -- they come from the MP-SPDZ compiler's static analysis of the programs, not from a timed run -- so I have filled those in; the one gap is $\Pi_\mathsf{ModConv2}$ at $N = 16$, which I did not compile.
+The Multipars comparison figure of $0.53$ MB is my own arithmetic from their $14.9$ kbit/triple and our $451$ triples at $N=4$, not a number either paper states.
+Two things to check before this goes out: whether \texttt{noise\_bits} should be set to $62$ (matching Fhenix's worst-case domain $l = 63$, for a like-for-like comparison) or to the true noise bound of the target TFHE parameter set (which is much smaller, and is where our advantage over a generic rounding protocol actually shows up) -- the scripts take this as a parameter and default to $40$; and whether the citation keys \texttt{EPRINT:Keller20}, \texttt{JC:CGGI20} and \texttt{CCS:HOSS23} match this bibliography's entries for MP-SPDZ, TFHE and Multipars respectively, since I wrote them from convention rather than from your \texttt{.bib}.
+}

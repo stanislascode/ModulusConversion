@@ -1,0 +1,12 @@
+Default bit length for compilation: 63
+Default security parameter for compilation: 40
+Compiling file Programs/Source/modconv3_online.mpc
+Writing to Programs/Schedules/modconv3_online.sch
+Writing to Programs/Bytecode/modconv3_online-0.bc
+Hash: 05d2e69a9291099f0e3e6cc2242c078b4f9b809562e7bbec8d4ac138297910fc
+Program requires at most:
+          65 integer inputs from player 0
+           3 integer opens
+         315 integer triples
+         315 integer simple multiplications
+          10 virtual machine rounds

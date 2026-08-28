@@ -1,0 +1,28 @@
+import sys, os
+sys.path.insert(0, os.path.join(os.getcwd(), 'Programs/Source'))
+
+from modconv import (Inputs, read_from, sample_party_shares_modconv2,
+                     preproc_modconv2, default_beta_modconv2, online_lookup,
+                     check_result, warm_up, Q)
+from Compiler.library import start_timer, stop_timer, print_ln
+import random
+
+n_parties = int(program.args[1]) if len(program.args) > 1 else 2
+beta = int(program.args[2]) if len(program.args) > 2 else default_beta_modconv2(n_parties)
+
+inputs = Inputs(n_parties)
+n_l = sample_party_shares_modconv2(beta, n_parties, inputs)
+x = random.randrange(Q - n_parties * Q // beta + 1)
+inputs.put(0, x)
+inputs.flush()
+
+warm_up()
+
+start_timer(1)
+m, us = preproc_modconv2(beta, n_parties, n_l)
+stop_timer(1)
+
+x_share = read_from(0, 1)[0]
+res, y = online_lookup(x_share, m, us, beta)
+print_ln('parties: %s  beta: %s  corrections: %s', n_parties, beta, len(us))
+check_result(res, x)

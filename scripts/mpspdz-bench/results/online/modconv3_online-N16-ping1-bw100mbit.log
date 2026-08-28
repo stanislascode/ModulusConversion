@@ -1,0 +1,138 @@
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 0 -N 16 -d modconv3_online -pn 12037 -h localhost -N 16
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 1 -N 16 -d modconv3_online -pn 12037 -h localhost -N 16
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 2 -N 16 -d modconv3_online -pn 12037 -h localhost -N 16
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 3 -N 16 -d modconv3_online -pn 12037 -h localhost -N 16
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 4 -N 16 -d modconv3_online -pn 12037 -h localhost -N 16
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 5 -N 16 -d modconv3_online -pn 12037 -h localhost -N 16
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 6 -N 16 -d modconv3_online -pn 12037 -h localhost -N 16
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 7 -N 16 -d modconv3_online -pn 12037 -h localhost -N 16
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 8 -N 16 -d modconv3_online -pn 12037 -h localhost -N 16
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 9 -N 16 -d modconv3_online -pn 12037 -h localhost -N 16
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 10 -N 16 -d modconv3_online -pn 12037 -h localhost -N 16
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 11 -N 16 -d modconv3_online -pn 12037 -h localhost -N 16
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 12 -N 16 -d modconv3_online -pn 12037 -h localhost -N 16
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 13 -N 16 -d modconv3_online -pn 12037 -h localhost -N 16
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 14 -N 16 -d modconv3_online -pn 12037 -h localhost -N 16
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 15 -N 16 -d modconv3_online -pn 12037 -h localhost -N 16
+Using SPDZ2k security parameter 64
+Using statistical security parameter 40
+Trying to run 64-bit computation
+Starting timer 1 at 0 (0 MB, 0 rounds, 0 CPU seconds) after 1.2e-05
+Fatal communication error on Stanislass-MacBook-Pro.local: Receiving error (Connection reset by peer) when sending 4 bytes
+This is probably because another party encountered a problem.
+/Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/run-common.sh: line 94: 43143 Abort trap: 6           $my_prefix $SPDZROOT/$bin $i $params 2>&1
+     43145 Done                    | { if test "$BENCH"; then
+    if test $i = $front_player; then
+        tee -a $log;
+    else
+        cat >> $log;
+    fi;
+else
+    if test $i = $front_player; then
+        tee $log;
+    else
+        cat > $log;
+    fi;
+fi; }
+/Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/run-common.sh: line 94: 43149 Abort trap: 6           $my_prefix $SPDZROOT/$bin $i $params 2>&1
+     43151 Done                    | { if test "$BENCH"; then
+    if test $i = $front_player; then
+        tee -a $log;
+    else
+        cat >> $log;
+    fi;
+else
+    if test $i = $front_player; then
+        tee $log;
+    else
+        cat > $log;
+    fi;
+fi; }
+/Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/run-common.sh: line 94: 43167 Abort trap: 6           $my_prefix $SPDZROOT/$bin $i $params 2>&1
+     43169 Done                    | { if test "$BENCH"; then
+    if test $i = $front_player; then
+        tee -a $log;
+    else
+        cat >> $log;
+    fi;
+else
+    if test $i = $front_player; then
+        tee $log;
+    else
+        cat > $log;
+    fi;
+fi; }
+/Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/run-common.sh: line 94: 43182 Abort trap: 6           $my_prefix $SPDZROOT/$bin $i $params 2>&1
+     43184 Done                    | { if test "$BENCH"; then
+    if test $i = $front_player; then
+        tee -a $log;
+    else
+        cat >> $log;
+    fi;
+else
+    if test $i = $front_player; then
+        tee $log;
+    else
+        cat > $log;
+    fi;
+fi; }
+=== Party 1
+Fatal communication error on Stanislass-MacBook-Pro.local: Receiving error (Connection reset by peer) when sending 4 bytes
+This is probably because another party encountered a problem.
+libc++abi: terminating due to uncaught exception of type closed_connection: Connection closed down. This is most likely due to a problem on the other side. If there's no error message on the other side, it might be due to a lack of memory. See https://mp-spdz.readthedocs.io/en/latest/troubleshooting.html#crash-without-error-message-killed-or-bad-alloc for possible remedies.
+=== Party 2
+This is probably because another party encountered a problem.
+Fatal communication error on Stanislass-MacBook-Pro.local: Receiving error (Connection reset by peer) when sending 4 bytes
+This is probably because another party encountered a problem.
+=== Party 3
+Fatal communication error on Stanislass-MacBook-Pro.local: Receiving error (Connection reset by peer) when sending 1804288 bytes
+This is probably because another party encountered a problem.
+libc++abi: terminating due to uncaught exception of type closed_connection: Connection closed down. This is most likely due to a problem on the other side. If there's no error message on the other side, it might be due to a lack of memory. See https://mp-spdz.readthedocs.io/en/latest/troubleshooting.html#crash-without-error-message-killed-or-bad-alloc for possible remedies.
+=== Party 4
+  Size transmitted: 3634557791 bytes
+  Size of buffer:   1024 bytes
+
+=== Party 5
+Starting timer 1 at 0 (0 MB, 0 rounds, 0 CPU seconds) after 3e-06
+Fatal communication error on Stanislass-MacBook-Pro.local: Receiving error (Connection reset by peer) when sending 4 bytes
+This is probably because another party encountered a problem.
+=== Party 6
+This is probably because another party encountered a problem.
+Fatal communication error on Stanislass-MacBook-Pro.local: Receiving error (Connection reset by peer) when sending 4 bytes
+This is probably because another party encountered a problem.
+=== Party 7
+Starting timer 1 at 0 (0 MB, 0 rounds, 0 CPU seconds) after 1.1e-05
+Fatal communication error on Stanislass-MacBook-Pro.local: Receiving error (Connection reset by peer) when sending 4 bytes
+This is probably because another party encountered a problem.
+=== Party 8
+Starting timer 1 at 0 (0 MB, 0 rounds, 0 CPU seconds) after 9e-06
+Fatal communication error on Stanislass-MacBook-Pro.local: Receiving error (Connection reset by peer) when sending 4 bytes
+This is probably because another party encountered a problem.
+=== Party 9
+Fatal communication error on Stanislass-MacBook-Pro.local: Receiving error (Connection reset by peer) when sending 4 bytes
+This is probably because another party encountered a problem.
+libc++abi: terminating due to uncaught exception of type closed_connection: Connection closed down. This is most likely due to a problem on the other side. If there's no error message on the other side, it might be due to a lack of memory. See https://mp-spdz.readthedocs.io/en/latest/troubleshooting.html#crash-without-error-message-killed-or-bad-alloc for possible remedies.
+=== Party 10
+Starting timer 1 at 0 (0 MB, 0 rounds, 0 CPU seconds) after 3e-06
+Fatal communication error on Stanislass-MacBook-Pro.local: Receiving error (Connection reset by peer) when sending 4 bytes
+This is probably because another party encountered a problem.
+=== Party 11
+  Size transmitted: 2046921964 bytes
+  Size of buffer:   1024 bytes
+
+=== Party 12
+Starting timer 1 at 0 (0 MB, 0 rounds, 0 CPU seconds) after 1e-05
+Fatal communication error on Stanislass-MacBook-Pro.local: Receiving error (Connection reset by peer) when sending 4 bytes
+This is probably because another party encountered a problem.
+=== Party 13
+Starting timer 1 at 0 (0 MB, 0 rounds, 0 CPU seconds) after 1.3e-05
+Fatal communication error on Stanislass-MacBook-Pro.local: Sending error (Broken pipe)
+This is probably because another party encountered a problem.
+=== Party 14
+Trying to run 64-bit computation
+Starting timer 1 at 0 (0 MB, 0 rounds, 0 CPU seconds) after 3e-06
+libc++abi: terminating due to uncaught exception of type closed_connection: Connection closed down. This is most likely due to a problem on the other side. If there's no error message on the other side, it might be due to a lack of memory. See https://mp-spdz.readthedocs.io/en/latest/troubleshooting.html#crash-without-error-message-killed-or-bad-alloc for possible remedies.
+=== Party 15
+This is probably because another party encountered a problem.
+Fatal communication error on Stanislass-MacBook-Pro.local: Receiving error (Connection reset by peer) when sending 4 bytes
+This is probably because another party encountered a problem.

@@ -1,0 +1,23 @@
+import sys, os
+sys.path.insert(0, os.path.join(os.getcwd(), 'Programs/Source'))
+
+from modconv import (Inputs, read_from, preproc_modconv3, online_compare,
+                     check_result, warm_up, Q)
+from Compiler.library import start_timer, stop_timer, print_ln
+import random
+
+x = random.randrange(Q)
+inputs = Inputs(1)
+inputs.put(0, x)
+inputs.flush()
+
+warm_up()
+
+start_timer(1)
+m, bits = preproc_modconv3()
+stop_timer(1)
+
+x_share = read_from(0, 1)[0]
+res, y = online_compare(x_share, m, bits)
+print_ln('mask bits: %s', len(bits))
+check_result(res, x)

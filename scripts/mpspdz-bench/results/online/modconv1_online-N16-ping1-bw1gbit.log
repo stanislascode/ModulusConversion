@@ -1,0 +1,31 @@
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 0 -N 16 -d modconv1_online-2 -pn 10030 -h localhost -N 16
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 1 -N 16 -d modconv1_online-2 -pn 10030 -h localhost -N 16
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 2 -N 16 -d modconv1_online-2 -pn 10030 -h localhost -N 16
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 3 -N 16 -d modconv1_online-2 -pn 10030 -h localhost -N 16
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 4 -N 16 -d modconv1_online-2 -pn 10030 -h localhost -N 16
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 5 -N 16 -d modconv1_online-2 -pn 10030 -h localhost -N 16
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 6 -N 16 -d modconv1_online-2 -pn 10030 -h localhost -N 16
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 7 -N 16 -d modconv1_online-2 -pn 10030 -h localhost -N 16
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 8 -N 16 -d modconv1_online-2 -pn 10030 -h localhost -N 16
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 9 -N 16 -d modconv1_online-2 -pn 10030 -h localhost -N 16
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 10 -N 16 -d modconv1_online-2 -pn 10030 -h localhost -N 16
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 11 -N 16 -d modconv1_online-2 -pn 10030 -h localhost -N 16
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 12 -N 16 -d modconv1_online-2 -pn 10030 -h localhost -N 16
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 13 -N 16 -d modconv1_online-2 -pn 10030 -h localhost -N 16
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 14 -N 16 -d modconv1_online-2 -pn 10030 -h localhost -N 16
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 15 -N 16 -d modconv1_online-2 -pn 10030 -h localhost -N 16
+Using SPDZ2k security parameter 64
+Using statistical security parameter 40
+Trying to run 64-bit computation
+Starting timer 1 at 0 (0 MB, 0 rounds, 0 CPU seconds) after 8e-06
+Stopped timer 1 at 0.021489 (0.00102 MB, 5 rounds, 0.008902 CPU seconds)
+converted value: 3948335602380870399
+expected value: 3948335602380870399
+Tinier open counter: 0
+SPDZ gf2n_long open counter: 0
+SPDZ2^(64+64) open counter: 3
+The following benchmarks are including preprocessing (offline phase).
+Time = 0.892244 seconds 
+Time1 = 0.021489 seconds (0.00102 MB, 5 rounds, 0.008902 CPU seconds)
+Data sent = 0.961488 MB in ~575 rounds (party 0 only; use '-v' for more details)
+Global data sent = 237.79 MB (all parties)

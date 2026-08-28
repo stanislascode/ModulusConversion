@@ -1,0 +1,21 @@
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 0 -N 2 -d modconv1_preproc-2 -pn 18949 -h localhost -N 2
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 1 -N 2 -d modconv1_preproc-2 -pn 18949 -h localhost -N 2
+Using SPDZ2k security parameter 64
+Using statistical security parameter 40
+Trying to run 64-bit computation
+No proper key material found in Player-Data//Mascot-Secrets-R-64-c97e597deaba25dffb978697e268153ef924e62f-P0-2, generating from scratch (cannot read from Player-Data//Mascot-Secrets-R-64-c97e597deaba25dffb978697e268153ef924e62f-P0-2)
+No proper key material found in Player-Data//Mascot-Secrets-2-128-9a50bc35c6c9cc217be9a7ddd86266d523b22990-P0-2, generating from scratch (cannot read from Player-Data//Mascot-Secrets-2-128-9a50bc35c6c9cc217be9a7ddd86266d523b22990-P0-2)
+No proper key material found in Player-Data//Mascot-Secrets-B-64-fe9921394c99b45129ac41210fecc46e6277d1ca-P0-2, generating from scratch (cannot read from Player-Data//Mascot-Secrets-B-64-fe9921394c99b45129ac41210fecc46e6277d1ca-P0-2)
+Starting timer 1 at 0 (0 MB, 0 rounds, 0 CPU seconds) after 3e-06
+Stopped timer 1 at 0.017241 (1.41022 MB, 86 rounds, 0.012275 CPU seconds)
+beta: 2  corrections: 2
+converted value: 2867785498612414726
+expected value: 2867785498612414726
+Tinier open counter: 0
+SPDZ gf2n_long open counter: 0
+SPDZ2^(64+64) open counter: 3
+The following benchmarks are including preprocessing (offline phase).
+Time = 0.038478 seconds 
+Time1 = 0.017241 seconds (1.41022 MB, 86 rounds, 0.012275 CPU seconds)
+Data sent = 1.52355 MB in ~164 rounds (party 0 only; use '-v' for more details)
+Global data sent = 3.98563 MB (all parties)

@@ -1,0 +1,24 @@
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 0 -N 8 -d modconv3_online -pn 10785 -h localhost -N 8
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 1 -N 8 -d modconv3_online -pn 10785 -h localhost -N 8
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 2 -N 8 -d modconv3_online -pn 10785 -h localhost -N 8
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 3 -N 8 -d modconv3_online -pn 10785 -h localhost -N 8
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 4 -N 8 -d modconv3_online -pn 10785 -h localhost -N 8
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 5 -N 8 -d modconv3_online -pn 10785 -h localhost -N 8
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 6 -N 8 -d modconv3_online -pn 10785 -h localhost -N 8
+Running /Users/au786248/MPSPZDimplem/implem-thresholdFHE-preproc/mp-spdz-0.4.3/Scripts/../spdz2k-party.x 7 -N 8 -d modconv3_online -pn 10785 -h localhost -N 8
+Using SPDZ2k security parameter 64
+Using statistical security parameter 40
+Trying to run 64-bit computation
+Starting timer 1 at 0 (0 MB, 0 rounds, 0 CPU seconds) after 4e-06
+Stopped timer 1 at 0.182936 (38.072 MB, 185 rounds, 0.249749 CPU seconds)
+converted value: 2412783429513908954
+expected value: 2412783429513908954
+Tinier open counter: 0
+SPDZ gf2n_long open counter: 0
+SPDZ2^(64+64) open counter: 9
+The following benchmarks are including preprocessing (offline phase).
+Time = 0.366296 seconds 
+Time1 = 0.182936 seconds (38.072 MB, 185 rounds, 0.249749 CPU seconds)
+Data sent = 39.398 MB in ~460 rounds (party 0 only; use '-v' for more details)
+Global data sent = 356.816 MB (all parties)
+Communication time accounts for more than 95 percent of total time (0.690423 seconds). This might be because of the computation and the network setting, but it could also be product of the optimization trade-off during compilation. See https://mp-spdz.readthedocs.io/en/latest/troubleshooting.html#high-number-of-rounds-or-slow-wan-execution

@@ -1,0 +1,24 @@
+import sys, os
+sys.path.insert(0, os.path.join(os.getcwd(), 'Programs/Source'))
+
+from modconv import (Inputs, read_from, preproc_modconv1, sample_input,
+                     online_lookup, check_result, warm_up)
+from Compiler.library import start_timer, stop_timer, print_ln
+
+beta = int(program.args[1]) if len(program.args) > 1 else 2
+
+x = sample_input(beta)
+inputs = Inputs(1)
+inputs.put(0, x)
+inputs.flush()
+
+warm_up()
+
+start_timer(1)
+m, us = preproc_modconv1(beta)
+stop_timer(1)
+
+x_share = read_from(0, 1)[0]
+res, y = online_lookup(x_share, m, us, beta)
+print_ln('beta: %s  corrections: %s', beta, len(us))
+check_result(res, x)
