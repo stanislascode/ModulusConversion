@@ -1,0 +1,76 @@
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 0 -N 4 -d -b 80000 modconv1_online-2-4000-1024-1 -pn 16341 -h localhost -N 4
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 1 -N 4 -d -b 80000 modconv1_online-2-4000-1024-1 -pn 16341 -h localhost -N 4
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 2 -N 4 -d -b 80000 modconv1_online-2-4000-1024-1 -pn 16341 -h localhost -N 4
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 3 -N 4 -d -b 80000 modconv1_online-2-4000-1024-1 -pn 16341 -h localhost -N 4
+Using SPDZ2k security parameter 64
+Using statistical security parameter 40
+Trying to run 64-bit computation
+terminate called after throwing an instance of 'closed_connection'
+/home/mpspdz/mp-spdz-0.3.8/Scripts/run-common.sh: line 90: 1165417 Aborted                 (core dumped) $my_prefix $SPDZROOT/$bin $i $params 2>&1
+     1165418 Done                    | { if test "$BENCH"; then
+    if test $i = $front_player; then
+        tee -a $log;
+    else
+        cat >> $log;
+    fi;
+else
+    if test $i = $front_player; then
+        tee $log;
+    else
+        cat > $log;
+    fi;
+fi; }
+/home/mpspdz/mp-spdz-0.3.8/Scripts/run-common.sh: line 90: 1165420 Killed                  $my_prefix $SPDZROOT/$bin $i $params 2>&1
+     1165421 Done                    | { if test "$BENCH"; then
+    if test $i = $front_player; then
+        tee -a $log;
+    else
+        cat >> $log;
+    fi;
+else
+    if test $i = $front_player; then
+        tee $log;
+    else
+        cat > $log;
+    fi;
+fi; }
+/home/mpspdz/mp-spdz-0.3.8/Scripts/run-common.sh: line 90: 1165424 Aborted                 (core dumped) $my_prefix $SPDZROOT/$bin $i $params 2>&1
+     1165426 Done                    | { if test "$BENCH"; then
+    if test $i = $front_player; then
+        tee -a $log;
+    else
+        cat >> $log;
+    fi;
+else
+    if test $i = $front_player; then
+        tee $log;
+    else
+        cat > $log;
+    fi;
+fi; }
+/home/mpspdz/mp-spdz-0.3.8/Scripts/run-common.sh: line 90: 1165428 Aborted                 (core dumped) $my_prefix $SPDZROOT/$bin $i $params 2>&1
+     1165429 Done                    | { if test "$BENCH"; then
+    if test $i = $front_player; then
+        tee -a $log;
+    else
+        cat >> $log;
+    fi;
+else
+    if test $i = $front_player; then
+        tee $log;
+    else
+        cat > $log;
+    fi;
+fi; }
+=== Party 1
+Using SPDZ2k security parameter 64
+Using statistical security parameter 40
+Trying to run 64-bit computation
+=== Party 2
+Trying to run 64-bit computation
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  Ubuntu-2204-jammy-amd64-base : Receiving error - 1 : Connection reset by peer
+=== Party 3
+Trying to run 64-bit computation
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  Ubuntu-2204-jammy-amd64-base : Receiving error - 1 : Connection reset by peer

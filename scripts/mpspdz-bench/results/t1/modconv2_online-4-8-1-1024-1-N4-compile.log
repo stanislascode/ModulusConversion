@@ -1,0 +1,11 @@
+Default bit length for compilation: 63
+Default security parameter for compilation: 40
+Compiling file Programs/Source/modconv2_online.mpc
+WARNING: Order of memory instructions not preserved due to long vector, errors possible
+Writing to Programs/Schedules/modconv2_online-4-8-1-1024-1.sch
+Writing to Programs/Bytecode/modconv2_online-4-8-1-1024-1-0.bc
+Hash: 30874fc66c8d7f236a12838d808136103e223b4c5b26ef03a301e61a24924c46
+Program requires at most:
+        1034 integer inputs from player 0
+           5 integer opens
+           6 virtual machine rounds
