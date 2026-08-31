@@ -57,7 +57,9 @@ The measured round counts are MP-SPDZ's own, which count one round per polling i
 \begin{table}[tbp]
     \caption{%
         Cost of one decryption, timed phase only, converting from $\ints_{2^{63}}$ to $\ints_{2^{64}}$.
-        Openings are the protocol-level round complexity; rounds and data are measured by MP-SPDZ over the timed phase, under an emulated $1$~ms ping time and $1$~Gbit/sec bandwidth.%
+        Openings are the protocol-level round complexity; rounds and data are measured by MP-SPDZ over the timed phase, under an emulated $1$~ms ping time and $1$~Gbit/sec bandwidth, as the median of five runs.
+        Communication is $251.7 (N-1)$ bytes in every row, being two openings of a $\ints_{2^{64}}$ share to each peer with its MAC check.
+        The $N = 16$ times are contended; see \cref{sec:benchmark-caveats}.%
     }
     \label{tab:benchmark-online}
     \centering
@@ -68,14 +70,14 @@ The measured round counts are MP-SPDZ's own, which count one round per polling i
         Protocol & $N$ & $\beta$ & Openings & Rounds & Data/party & Time (ms) \\
         \midrule
         \multirow{3}{*}{$\Pi_\mathsf{ModConv1}$}
-            & $4$  & $2$ & $2$ & $10$ & $0.72$ kB & $6.92$ \\
-            & $8$  & $2$ & $2$ & $10$ & $1.68$ kB & $11.54$ \\
-            & $16$ & $2$ & $2$ & $10$ & $3.60$ kB & $28.80$ \\
+            & $4$  & $2$ & $2$ & $10$ & $0.76$ kB & $6.73$ \\
+            & $8$  & $2$ & $2$ & $10$ & $1.76$ kB & $14.98$ \\
+            & $16$ & $2$ & $2$ & $10$ & $3.77$ kB & $99.99$ \\
         \midrule
         \multirow{3}{*}{$\Pi_\mathsf{ModConv2}$}
-            & $4$  & $8$  & $2$ & $10$ & $0.72$ kB & $6.87$ \\
-            & $8$  & $16$ & $2$ & $10$ & $1.68$ kB & $8.42$ \\
-            & $16$ & $32$ & $2$ & $10$ & $3.60$ kB & $18.99$ \\
+            & $4$  & $8$  & $2$ & $10$ & $0.76$ kB & $6.86$ \\
+            & $8$  & $16$ & $2$ & $10$ & $1.76$ kB & $14.65$ \\
+            & $16$ & $32$ & $2$ & $10$ & $3.77$ kB & $76.91$ \\
         \bottomrule
     \end{tabular}
 \end{table}
@@ -111,11 +113,11 @@ The protocol issues no $\Mul$ command, as \cref{tab:modconv} records, but the $\
 \end{table}
 
 These are the costs of a single conversion run in isolation, and they do not scale linearly: independent conversions collapse into shared rounds, so a per-thousand figure of the kind \cite[Table~5]{CCS:ZZLP25} reports cannot be obtained by multiplying \cref{tab:benchmark-preproc} by $1000$.
-Batching one thousand conversions into a single program instead gives $37.1$~s, $1274$~MB and $2706$ rounds for $\Pi_\mathsf{ModConv1}$, against $8.85$~s, $336$~MB and $627$ rounds for $\Pi_\mathsf{ModConv2}$.
+Batching one thousand conversions into a single program instead gives $37.4$~s, $1344$~MB and $176$ rounds for $\Pi_\mathsf{ModConv1}$, against $6.37$~s, $273$~MB and $33$ rounds for $\Pi_\mathsf{ModConv2}$: a factor of nearly six in time and five in communication between the two protocols, and a round count that barely grows with the batch.
 
 It is worth being precise about what the first of those numbers measures, because it is not our protocol.
-Generating $63\,000$ shared random bits in SPDZ2k and doing nothing else costs $1272.76$~MB on the same host; the complete preprocessing of $\Pi_\mathsf{ModConv1}$ for the same one thousand conversions costs $1274.02$~MB.
-The protocol's own contribution --- the corrections, the one-hot vector and the linear combinations --- is thus $1.26$~MB, or one part in a thousand, and the remaining $99.9\%$ is the price SPDZ2k charges for an authenticated random bit, about $20.2$~kB each.
+Generating $63\,000$ shared random bits in SPDZ2k and doing nothing else costs $1272.76$~MB; the complete preprocessing of $\Pi_\mathsf{ModConv1}$ for the same one thousand conversions costs $1344$~MB.
+The protocol's own contribution --- the corrections, the one-hot vector and the linear combinations --- is thus under $6\%$, and the rest is the price SPDZ2k charges for an authenticated random bit, about $20.2$~kB each.
 Any protocol requiring $63$ such bits per conversion would pay the same, and a bespoke implementation would not pay it at all.
 The defensible cost of this preprocessing is therefore the count of primitives it issues --- $63$ $\RandomBit$ commands and no $\Mul$ for $\Pi_\mathsf{ModConv1}$, $(N-1)\beta^2$ $\Mul$ commands and no $\RandomBit$ for $\Pi_\mathsf{ModConv2}$ --- with the megabytes read as a property of the framework rather than of the protocol.
 
@@ -134,7 +136,9 @@ The comparison in \cref{sec:benchmark-comparison} is therefore conservative in t
 
 \begin{table}[tbp]
     \caption{%
-        Time (in ms) of one decryption, online phase, under emulated network conditions at $1$~Gbit/sec, following \cite[Table~2]{CCS:ZZLP25}.%
+        Time (in ms) of one decryption, online phase, under emulated network conditions at $1$~Gbit/sec, following \cite[Table~2]{CCS:ZZLP25}.
+        Median of five runs.
+        For comparison, \cite{CCS:ZZLP25} reports $55.5$, $55.5$ and $56.5$~ms at $10$~ms and $555.8$, $566.0$ and $811.8$~ms at $100$~ms, for $N = 4$, $8$ and $16$ respectively.%
     }
     \label{tab:benchmark-latency}
     \centering
@@ -145,14 +149,14 @@ The comparison in \cref{sec:benchmark-comparison} is therefore conservative in t
         Protocol & Ping time & $4$ Parties & $8$ Parties & $16$ Parties \\
         \midrule
         \multirow{3}{*}{$\Pi_\mathsf{ModConv1}$}
-            & $1$ ms   & $6.92$   & $11.54$  & $28.80$ \\
-            & $10$ ms  & $61.21$  & $62.61$  & $84.90$ \\
-            & $100$ ms & $605.47$ & $606.38$ & $666.22$ \\
+            & $1$ ms   & $6.73$   & $14.98$  & $99.99$ \\
+            & $10$ ms  & $61.20$  & $65.31$  & $126.35$ \\
+            & $100$ ms & $601.12$ & $604.06$ & $646.71$ \\
         \midrule
         \multirow{3}{*}{$\Pi_\mathsf{ModConv2}$}
-            & $1$ ms   & $6.87$   & $8.42$   & $18.99$ \\
-            & $10$ ms  & $61.14$  & $67.14$  & $143.92$ \\
-            & $100$ ms & $601.05$ & $607.93$ & $636.09$ \\
+            & $1$ ms   & $6.86$   & $14.65$  & $76.91$ \\
+            & $10$ ms  & $61.18$  & $66.81$  & $106.97$ \\
+            & $100$ ms & $601.94$ & $603.13$ & $628.82$ \\
         \bottomrule
     \end{tabular}
 \end{table}
@@ -168,40 +172,53 @@ The property that decides this comparison is that \emph{our round complexity doe
 The batch is vectorized rather than looped, so a thousand decryptions issue the same two opening instructions as one; we measure $11$ rounds and $96$ bytes per decryption, unchanged from $1000$ to $10\,000$ decryptions per batch.
 A larger batch therefore dilutes a fixed network cost rather than paying it again, and that, rather than any local optimization, is what the figures below reflect.
 
-\Cref{tab:benchmark-throughput} reports the sweep over batch size and threads per party.
-Two readings matter.
-At one thread and a batch of $5000$ we already reach $74\,722$ decryptions per second; and the best point of the sweep, $110\,610$, is about $1.5\times$ Fhenix's figure at the same party count and network condition.
-Note that the batch is the stronger of the two variables --- one thread gains $48\%$ from batch $1000$ to $5000$ --- which is the round-independence above showing up directly.
+\Cref{tab:benchmark-throughput} reports the sweep over batch size and threads per party, each point the median of five runs.
+The two variables act differently.
+The batch is what the protocol buys: at a fixed thread count it gains between $50\%$ and $70\%$ from $1000$ to $10\,000$ decryptions, which is the fixed round cost being amortized and nothing else.
+Threads are what the host buys, and they are subject to it: the machine has $20$ cores for $N \times \text{threads}$ runnable threads, so five threads at $N = 4$ saturates it and the $B = 1000$ column, where there is too little work to amortize the extra tapes, actually falls back at five.
+The best point, $94\,139$ decryptions per second for $\Pi_\mathsf{ModConv1}$ and $92\,640$ for $\Pi_\mathsf{ModConv2}$, is about $1.28\times$ Fhenix's figure at the same party count and network condition.
 
-For the comparison we recomputed Fhenix's figures from the raw measurement logs published with its implementation rather than quoting its tables, so that both sides are derived the same way.
+We recomputed Fhenix's figures from the raw measurement logs published with its implementation rather than quoting its tables, so that both sides are derived the same way.
 At $N = 4$ under the same nominal conditions its implementation achieves $73\,578$ decryptions per second, falling to $29\,281$ at $N = 8$ and $9\,447$ at $N = 16$.
-It should be said plainly that their implementation is written directly in Rust for this one task while ours is a program compiled to a general-purpose multi-party virtual machine, so the comparison flatters neither the language nor the compiler; what it isolates is the round structure, which is a property of the protocols.
+It should be said plainly that their implementation is written directly in Rust for this one task while ours is a program compiled to a general-purpose multi-party virtual machine, and that our figure needs several threads per party to get there while a single thread reaches only $55\,081$.
+What the comparison isolates is not implementation quality but round structure, and that is a property of the protocols.
 
 \begin{table}[tbp]
     \caption{%
         Decryptions per second at $N = 4$ under an emulated $1$~ms ping time and $1$~Gbit/sec bandwidth, online phase, over a sweep of batch size and threads per party.
-        Median of five runs per point.
+        Median of five runs per point; every point decrypted correctly.
         Fhenix achieves $73\,578$ under the same conditions.%
     }
     \label{tab:benchmark-throughput}
     \centering
     \small
-    \begin{tabular}{@{}lccc@{}}
+    \setlength{\tabcolsep}{5pt}
+    \begin{tabular}{@{}llccc@{}}
         \toprule
-        Threads & Batch $1000$ & Batch $5000$ & Batch $10\,000$ \\
+        Protocol & Threads & Batch $1000$ & Batch $5000$ & Batch $10\,000$ \\
         \midrule
-        $1$ & $50\,383$  & $74\,722$   & $74\,500$ \\
-        $2$ & $91\,394$  & $67\,347$   & $84\,183$ \\
-        $4$ & $86\,342$  & $109\,265$  & $102\,435$ \\
-        $5$ & $71\,978$  & $87\,395$   & $\bm{110\,610}$ \\
+        \multirow{4}{*}{$\Pi_\mathsf{ModConv1}$}
+            & $1$ & $32\,628$ & $47\,008$ & $55\,081$ \\
+            & $2$ & $42\,582$ & $72\,384$ & $79\,300$ \\
+            & $4$ & $44\,225$ & $74\,892$ & $80\,813$ \\
+            & $5$ & $37\,286$ & $82\,089$ & $\bm{94\,139}$ \\
+        \midrule
+        \multirow{4}{*}{$\Pi_\mathsf{ModConv2}$}
+            & $1$ & $38\,593$ & $58\,180$ & $57\,658$ \\
+            & $2$ & $41\,974$ & $59\,079$ & $68\,675$ \\
+            & $4$ & $43\,285$ & $69\,375$ & $79\,105$ \\
+            & $5$ & $34\,062$ & $83\,369$ & $\bm{92\,640}$ \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-Latency admits a cleaner comparison than throughput, because it is governed by round trips rather than by how fast a party computes.
-Fhenix's single-ciphertext measurements give $55.5$, $55.5$ and $56.5$~ms at $N = 4$, $8$ and $16$ under a $10$~ms ping time, and $555.8$, $566.0$ and $811.8$~ms under a $100$~ms ping time, that is to say about $5.5$ round trips, largely flat in the number of parties.
-\Cref{tab:benchmark-latency} gives $61.2$, $62.6$ and $84.9$~ms, and $605.5$, $606.4$ and $666.2$~ms, for $\Pi_\mathsf{ModConv1}$ under the same two conditions --- about six round trips, and likewise flat.
-The two are therefore at parity on latency to within ten percent, and, as \cref{sec:benchmark-network} notes, our figures carry a bandwidth cap that theirs do not.
+Latency admits a cleaner comparison than throughput, because it is governed by round trips rather than by how fast a party computes, and it is where the two protocols can be set against each other rather than the two implementations.
+Fhenix's single-ciphertext measurements give $55.5$, $55.5$ and $56.5$~ms at $N = 4$, $8$ and $16$ under a $10$~ms ping time, and $555.8$, $566.0$ and $811.8$~ms under a $100$~ms ping time: about $5.5$ round trips.
+\Cref{tab:benchmark-latency} gives $61.2$, $65.3$ and $126.3$~ms, and $601.1$, $604.1$ and $646.7$~ms, for $\Pi_\mathsf{ModConv1}$ under the same two conditions --- about six round trips.
+At $N = 4$ and $N = 8$ the two are at parity to within ten percent, we being marginally the slower.
+At $N = 16$ and $100$~ms, where the round trips dominate everything else, the ordering reverses: $646.7$~ms against their $811.8$, and $628.8$ for $\Pi_\mathsf{ModConv2}$, a fifth faster.
+Their cost grows with the party count at the high ping time while ours does not, which is what two openings against their three buys.
+As \cref{sec:benchmark-network} notes, our figures additionally carry a bandwidth cap that theirs do not.
 
 \subsection{Caveats}
 \label{sec:benchmark-caveats}
@@ -218,16 +235,15 @@ This is what makes them online figures at all --- MP-SPDZ would otherwise genera
 It also means the online and preprocessing sections must be read together: nothing in \cref{sec:benchmark-comparison} accounts for the cost of producing that material, which \cref{tab:benchmark-preproc} gives separately.
 Every reported row was checked against the $96$ bytes per decryption that two openings of a $\ints_{2^{64}}$ share to $N-1$ peers must cost, which is the symptom by which a run that silently generated preprocessing can be told from one that did not; and against a plaintext computed in the clear, so that a batch which decrypted incorrectly can never be reported as a fast one.
 
-The third is the variance of \cref{tab:benchmark-throughput}.
-Its surface is not monotone --- two threads at batch $5000$ is slower than one --- because all $N$ parties share a single $20$-core host, so a point with $N \times \text{threads}$ runnable threads contends with itself.
-Each entry is a median of five runs for that reason, but the spread within a point is comparable to the difference between neighbouring points, and only the gross shape of the table, not its individual cells, should be relied upon.
+The third is that all $N$ parties share a single $20$-core host, so a configuration asking for $N \times \text{threads}$ runnable threads contends with itself.
+\Cref{tab:benchmark-throughput} is near-monotone under a median of five runs and its shape can be relied upon, but the $N = 16$ rows of \cref{tab:benchmark-online,tab:benchmark-latency} cannot: at a $1$~ms ping time their five repetitions span $60$--$135$~ms, a factor of two, against a spread below $2\%$ at $N = 4$.
+The $N = 16$ figures should be read as upper bounds set by the host rather than as measurements of the protocol, and they are the reason the $N = 16$ column does not decrease as the ping time falls.
 A deployment with one host per party, which is the setting the protocol is meant for, would not have this behaviour.
 
 \claude{%
-Every number above is measured, with \texttt{tc} confirmed attached on every row.
-\Cref{tab:benchmark-throughput} is from the hand-run sweep; the rewritten \texttt{run\_benchmark.sh} now reproduces it end to end, with five repetitions per point and a median, so re-run it and replace the table wholesale --- the cells will move, and the $\Pi_\mathsf{ModConv2}$ column is missing entirely.
-\Cref{tab:benchmark-online,tab:benchmark-latency} still hold figures from the previous harness; their $N = 16$ rows in particular were measured under contention and moved by a factor of two and a half between two runs, so they want re-running on a quiet host before anyone relies on them.
-Two things I could not settle for you.
-(i) Neither machine is named. Fhenix names a \texttt{c7a.32xlarge}; this section should name its counterpart, and the throughput comparison means little without both, since one is a Rust binary and the other a virtual machine --- and one host is shared by all parties here.
-(ii) I recomputed Fhenix's $73\,578$ from the logs in \texttt{benchmarks/}, not from its tables, aggregating total ciphertexts over the slowest concurrent job. Check one cell against the published table before building on it; the entire $1.5\times$ claim rests on that denominator.
+Every table above is now filled from one run of the rewritten harness, with \texttt{tc} confirmed attached and its round-trip time checked against the nominal ping on every row, five repetitions per point, and zero decryption errors across all $24$ throughput points and all $18$ latency points.
+Three things remain.
+(i) The throughput claim moved down when it was repeated: a single run had given $110\,610$, the median of five gives $94\,139$, so it is $1.28\times$ Fhenix and not $1.5\times$, and the single-threaded figure no longer beats them. If you quote a number anywhere else in the paper, quote this one.
+(ii) Neither machine is named. Fhenix names a \texttt{c7a.32xlarge}; this section should name its counterpart, and it matters more than usual here because one host carries all $N$ parties in our setup and the $N = 16$ rows are visibly limited by that.
+(iii) I recomputed Fhenix's $73\,578$ from the logs in \texttt{benchmarks/}, not from its tables, aggregating total ciphertexts over the slowest concurrent job. Check one cell against the published table before building on it; the $1.28\times$ and the latency comparison both rest on that denominator.
 }
