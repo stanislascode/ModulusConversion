@@ -232,8 +232,10 @@ Aggregating the raw logs published with their implementation ourselves gives $73
 
 Two differences in setting should be stated before the ratio is read, and both run against us.
 Their benchmarks are taken on a single \texttt{c7a.32xlarge} with $128$ vCPUs carrying all $N$ parties, so $32$ per party at $N = 4$, where ours has $20$ vCPUs and therefore five.
-And their throughput configuration is not single-threaded: their published logs record ten jobs of $6500$ ciphertexts per party all completing between $0.764$ and $0.883$ seconds, a spread of $16\%$ where sequential execution would put the last at ten times the first, and their participant runs a thread pool into which those jobs are spawned.
-Comparing our one-thread column against that therefore compares one thread with at least ten concurrent jobs on six times the hardware, which is why the $55\,081$ there is not a like-for-like defeat; the $94\,139$ that does exceed them uses five threads per party against their thirty-two available cores.
+And their throughput configuration is not a single stream: their published logs record ten jobs of $6500$ ciphertexts per party all completing between $0.764$ and $0.883$ seconds, a spread of $16\%$ where sequential execution would put the last at ten times the first.
+How many threads serve those ten jobs is not recoverable --- their command line exposes only protocol parameters, the count is read from a configuration file whose single published copy specifies a workload their own benchmark logs contradict, and \cite{CCS:ZZLP25} does not state it.
+What the paper does state is that ``the CPU is the bottleneck for $1$~ms and $10$~ms ping times'', so their figure at $1$~ms is a compute-saturated measurement of a $128$-vCPU machine.
+Our one-thread column is therefore not the comparable quantity, and the $55\,081$ there should not be read as a defeat; the $94\,139$ that does exceed them uses five threads per party on a host with $20$ vCPUs in total.
 Normalized by the machine, the two are $4\,707$ and $502$ decryptions per second per vCPU.
 It should equally be said that their implementation is written directly in Rust for this one task while ours is a program compiled to a general-purpose multi-party virtual machine.
 What the comparison isolates is not implementation quality but round structure, and that is a property of the protocols.
@@ -242,7 +244,7 @@ What the comparison isolates is not implementation quality but round structure, 
     \caption{%
         Decryptions per second at $N = 4$ under an emulated $1$~ms ping time and $1$~Gbit/sec bandwidth, online phase, over a sweep of batch size and threads per party.
         Median of five runs per point; every point decrypted correctly.
-        \cite[Table~1]{CCS:ZZLP25} reports $64\,319$ under the same conditions, on a host with $128$ vCPUs against this one's $20$, and with at least ten concurrent jobs per party rather than a single thread.%
+        \cite[Table~1]{CCS:ZZLP25} reports $64\,319$ under the same conditions, on a host with $128$ vCPUs against this one's $20$, running ten pipelined jobs per party and, by its own account, bounded by the CPU at this ping time.%
     }
     \label{tab:benchmark-throughput}
     \centering
@@ -303,5 +305,5 @@ My own aggregation of their raw logs had given $73\,578$ where they claim $64\,3
 Three things remain.
 (i) \Cref{tab:benchmark-preproc-cmp}'s ``excl.\ generation'' times are measured on my machine, unshaped. Their byte and round columns are network-independent and stand, but re-run the \texttt{preproc} phase with \texttt{tc} attached before quoting the $0.0014$ and $0.028$; the harness now writes both conventions to \texttt{preproc.csv}.
 (ii) The $N = 16$ latency cells at $1$ and $10$~ms are host-limited: five repetitions spanning $60$--$135$~ms against under $2\%$ at $N = 4$. They are the only cells where we look much worse than \cite{CCS:ZZLP25} and the cause is our hardware, not the protocol. Re-run them on a quiet host, or drop the column and say why.
-(iii) Name the machines. They name a \texttt{c7a.32xlarge}, $128$ vCPUs, all parties on it; ours has $20$. The section now states this because the throughput ratio is meaningless without it --- we reach $1.46\times$ their figure with five threads per party where they had thirty-two cores available and ran ten concurrent jobs.
+(iii) Name our machine. They name a \texttt{c7a.32xlarge}, $128$ vCPUs, all parties on it; ours has $20$ and is unnamed. The section now states this because the throughput ratio is meaningless without it. I could not determine their thread count for the online phase: it is absent from the paper, absent from the command line, and read from a config file whose published copy specifies \texttt{ctxt\_per\_job = 100} where the benchmark logs record $6500$. The text therefore rests on their own sentence that the CPU is the bottleneck at this ping time, which is enough and is quotable.
 }
