@@ -84,12 +84,24 @@ Three phases, four CSVs in `results/`:
 |---|---|---|
 | `throughput` | `throughput.csv`, `throughput-sweep.csv` | N=4, 1 ms, 1 Gbit: best decryptions/sec over a threads x batch sweep, plus every point of the sweep |
 | `latency` | `latency.csv` | one decryption, across ping {1,10,100} ms x parties {4,8,16} |
-| `preproc` | `preproc.csv` | seconds for the batched preprocessing of `PREPROC_BATCH` decryptions, N=2 |
+| `grid` | `grid.csv` | throughput over bandwidth x ping x parties, at one fixed configuration |
+| `preproc` | `preproc.csv` | seconds for the batched preprocessing of `PREPROC_BATCH` decryptions, N=2, under both conventions |
 
 Run one phase at a time with `PHASES="preproc" ./run_benchmark.sh`. Other knobs:
 `BATCHES` and `THREAD_LIST` (the sweep, defaults `"1000 5000 10000"` and
 `"1 2 4 5"`), `REPS` (repetitions per point, default 5, reported as a median),
-`PARTIES`, `PINGS`, `PREPROC_BATCH`, `PREPROC_N`, `LWE_N`, `RESULTS`.
+`PARTIES`, `PINGS`, `BANDWIDTHS`, `GRID_BATCH` and `GRID_THREADS` (the fixed
+configuration the grid holds), `PREPROC_BATCH`, `PREPROC_N`, `LWE_N`,
+`RESULTS`.
+
+The two throughput phases answer different questions and neither replaces the
+other. `throughput` sweeps batch and threads at one network condition, to find
+the configuration a host is capable of. `grid` then holds that configuration
+fixed and moves the network across Fhenix's own grid, which is where a
+protocol's *communication per decryption* shows up rather than its host's
+core count: ours is about `101(N-1)/3` bytes per party, so the advantage is
+expected to widen as bandwidth falls. Set `GRID_BATCH` and `GRID_THREADS` from
+the winning row of `throughput.csv` before running it.
 
 Every row carries a `mismatches` column: the number of decryptions whose opened
 plaintext differs from the value fixed in the clear at compile time. Anything

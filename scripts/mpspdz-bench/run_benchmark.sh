@@ -16,14 +16,14 @@ if [ ! -x "$MPSPDZ/spdz2k-party.x" ]; then
 fi
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
-PHASES=${PHASES:-"latency throughput preproc"}
+PHASES=${PHASES:-"latency throughput grid preproc"}
 ALLOW_NO_TC=${ALLOW_NO_TC:-0}
 
 # The online phase reads its preprocessing from disk (-F), so the timer covers
 # the online phase and nothing else. That is what makes the batch sweep
 # meaningful and what makes the figure comparable to an implementation that
 # separates its phases. Fake-Offline.x needs a build with -DINSECURE.
-if [[ " $PHASES " == *" latency "* ]] || [[ " $PHASES " == *" throughput "* ]]; then
+if [[ " $PHASES " == *" latency "* ]] || [[ " $PHASES " == *" throughput "* ]] || [[ " $PHASES " == *" grid "* ]]; then
     if [ ! -x "$MPSPDZ/Fake-Offline.x" ]; then
         echo "$MPSPDZ/Fake-Offline.x is missing. The online phases read their" >&2
         echo "preprocessing from disk, which needs it. Build it with:" >&2
@@ -39,6 +39,9 @@ THREAD_LIST=${THREAD_LIST:-"1 2 4 5"}
 REPS=${REPS:-5}
 PARTIES=${PARTIES:-"4 8 16"}
 PINGS=${PINGS:-"1 10 100"}
+BANDWIDTHS=${BANDWIDTHS:-"1gbit 100mbit"}
+GRID_BATCH=${GRID_BATCH:-10000}
+GRID_THREADS=${GRID_THREADS:-5}
 PREPROC_N=${PREPROC_N:-2}
 PREPROC_BATCH=${PREPROC_BATCH:-1000}
 LWE_N=${LWE_N:-1024}
@@ -329,6 +332,43 @@ if [[ " $PHASES " == *" throughput "* ]]; then
     done
 fi
 
+# ------------------------------------------------------------------ grid
+# Throughput over the full bandwidth x ping x parties grid of Fhenix's Table 3.
+# The sweep phase finds the best (batch, threads) at one point; this phase holds
+# that configuration fixed and moves the network instead, which is where a
+# protocol's communication per decryption shows up. Ours is ~101(N-1)/3 bytes
+# per party, so the advantage is expected to widen as bandwidth falls.
+if [[ " $PHASES " == *" grid "* ]]; then
+    CSV4="$RESULTS/grid.csv"
+    echo "protocol,parties,beta,ping_ms,bandwidth,net_emulated,batch,threads,reps,time_s_median,throughput_dec_per_sec,bytes_per_dec,rounds,mismatches,raw_times_s" > "$CSV4"
+    echo "    grid at batch=$GRID_BATCH threads=$GRID_THREADS, $REPS reps per cell"
+    for BW in $BANDWIDTHS; do
+        for PING in $PINGS; do
+            net "$PING" "$BW"
+            for N in $PARTIES; do
+                B2=$(beta2_of "$N")
+                ensure_prep "$N" "$(inputs_needed "$GRID_BATCH" "$B2")"
+
+                repeat_online "$REPS" "$N" modconv1_online 2 "$GRID_BATCH" "$LWE_N" "$GRID_THREADS"
+                if [ "$(awk "BEGIN{print ($MED_S > 0)}")" = 1 ]; then
+                    TP=$(awk "BEGIN{printf \"%.1f\", $GRID_BATCH/$MED_S}")
+                    BPD=$(awk "BEGIN{printf \"%.1f\", $LAST_MB*1048576/$GRID_BATCH}")
+                else TP=0; BPD=0; fi
+                echo "modconv1,$N,2,$PING,$BW,$EMU,$GRID_BATCH,$GRID_THREADS,$REPS,$MED_S,$TP,$BPD,$LAST_ROUNDS,$ERR_TOTAL,\"$RAW\"" >> "$CSV4"
+                echo "    modconv1 N=$N $BW ${PING}ms: $TP dec/s, $BPD B/dec, mismatches $ERR_TOTAL"
+
+                repeat_online "$REPS" "$N" modconv2_online "$N" "$B2" "$GRID_BATCH" "$LWE_N" "$GRID_THREADS"
+                if [ "$(awk "BEGIN{print ($MED_S > 0)}")" = 1 ]; then
+                    TP=$(awk "BEGIN{printf \"%.1f\", $GRID_BATCH/$MED_S}")
+                    BPD=$(awk "BEGIN{printf \"%.1f\", $LAST_MB*1048576/$GRID_BATCH}")
+                else TP=0; BPD=0; fi
+                echo "modconv2,$N,$B2,$PING,$BW,$EMU,$GRID_BATCH,$GRID_THREADS,$REPS,$MED_S,$TP,$BPD,$LAST_ROUNDS,$ERR_TOTAL,\"$RAW\"" >> "$CSV4"
+                echo "    modconv2 N=$N $BW ${PING}ms: $TP dec/s, $BPD B/dec, mismatches $ERR_TOTAL"
+            done
+        done
+    done
+fi
+
 # ------------------------------------------------------------------ preprocessing
 # Measured twice, under two conventions that answer different questions.
 #
@@ -363,4 +403,4 @@ if [[ " $PHASES " == *" preproc "* ]]; then
 fi
 
 echo
-echo "Results in $RESULTS/{throughput,throughput-sweep,latency,preproc}.csv"
+echo "Results in $RESULTS/{throughput,throughput-sweep,latency,grid,preproc}.csv"
