@@ -237,6 +237,39 @@ bytes per decryption at `N = 4`, scaling as `N - 1`, and 11 rounds regardless
 of batch size. Under threading the byte figure is party 0's share across tapes
 and is not comparable; compare it only at `threads=1`.
 
+### A round reduction that does not work, and why
+
+The two openings are **dependent**: the index selecting the correction comes
+from the first opened value, and MP-SPDZ checks an opened value's MAC before it
+may influence a further secret computation. A dependent pair costs twice what
+an independent pair does — measured at `N = 4`, five of MP-SPDZ's rounds for
+two independent openings against ten for two dependent ones, which is the six
+round trips the latency fit shows against Fhenix's 5.56.
+
+The obvious fix is to remove the dependency: open `y` together with all `β`
+candidates `v_i = x + u_i`, which depend on nothing, then compute
+`m = v_α − y` in the clear. It works, it is correct (0 mismatches over the
+whole grid), and it does halve the round count, 11 to 6, for
+`(β+1)/2` times the communication.
+
+**It is also insecure, and must not be used.** The correction table is
+`u_i = m − 2^63·c_i`, and `c_i` is *not* public: for ModConv1 it is
+`[α(m) > i]`, a function of the secret mask. An adversary who sees both `y' = x + m`
+and every `v_i` computes the differences `v_i − y' = −2^63·c_i`, in which `x`
+cancels, and so recovers `α(m)` exactly. Since `y` is public and
+`m = (y − x) mod q`, knowing `α(m)` confines `e = ⟨c, s⟩` to a range of width
+`q/β` — `log₂ β` bits of the secret key leaked per decryption, and fatal over
+many of them.
+
+The sound route to fewer round trips is the other one: keep the openings
+dependent but **defer the MAC check** of the first to the end. Opening
+optimistically and checking all MACs before any output is released is the
+standard SPDZ argument, a forged share would select a wrong correction, and the
+final check would catch it. That would give four round trips against their
+five. It needs MP-SPDZ to be persuaded not to check eagerly — `POpen` calls
+`check()` on the compiler's say-so and we found no lever for it — so it is a
+virtual-machine change, not a program one.
+
 ### Threads per party
 
 `THREADS` splits the batch across `@multithread` tapes; the script sweeps it
