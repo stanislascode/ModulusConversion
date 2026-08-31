@@ -25,8 +25,19 @@ PREPROC_N=${PREPROC_N:-2}
 LWE_N=${LWE_N:-1024}
 RESULTS=${RESULTS:-"$HERE/results"}
 
-NPROC=$( (command -v nproc >/dev/null && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 1)
-THREADS=${THREADS:-$(( NPROC / 4 > 0 ? NPROC / 4 : 1 ))}
+# One thread per party. Extra threads split the batch across tapes that each
+# open separately, multiplying rounds without parallelising anything that is
+# actually on the critical path. Measured at N=4, batch=1000: 11 rounds at
+# THREADS=1, 22 at 2, 55 at 5, monotonically slower. The knob stays for
+# reproducing that.
+THREADS=${THREADS:-1}
+
+# MP-SPDZ generates authenticated randomness for MAC checks in batches of -b
+# (default 1000). A timed region opening more than that regenerates mid-run,
+# and the regeneration -- offline work -- lands inside the timer: at
+# batch=1000 that is 6.4 KB/decryption instead of 96 bytes. Sizing the pool
+# above the batch keeps the generation in the untimed warm-up.
+PREP_BATCH=${PREP_BATCH:-$(( BATCH_SIZE * 20 > 20000 ? BATCH_SIZE * 20 : 20000 ))}
 
 cp "$HERE"/modconv.py "$HERE"/modconv*.mpc "$MPSPDZ/Programs/Source/"
 mkdir -p "$RESULTS"
@@ -95,7 +106,7 @@ run() {
     for a in "$@"; do prog="$prog-$a"; done
     local log="$RESULTS/$prog-N$n.log"
     ./compile.py -R 64 "$src" "$@" > "$RESULTS/$prog-N$n-compile.log" 2>&1
-    if ! Scripts/spdz2k.sh -N "$n" -d "$prog" > "$log" 2>&1; then
+    if ! Scripts/spdz2k.sh -N "$n" -d -b "$PREP_BATCH" "$prog" > "$log" 2>&1; then
         echo "  RUN FAILED, see $log" >&2
         RUN_S=0; RUN_MB=0; RUN_ROUNDS=0; RUN_ERR=-1
         return
@@ -120,7 +131,7 @@ if [[ " $PHASES " == *" latency "* ]] || [[ " $PHASES " == *" throughput "* ]]; 
     CSV1="$RESULTS/table1.csv"
     echo "protocol,parties,beta,ping_ms,bandwidth,net_emulated,latency_ms,throughput_dec_per_sec,batch,threads,mismatches" > "$CSV1"
     net 1 1gbit
-    echo "    throughput runs use $THREADS thread(s) per party ($NPROC cores detected)"
+    echo "    threads/party $THREADS, preprocessing pool -b $PREP_BATCH"
     B2=$(beta2_of 4)
     for p in 1 2; do
         if [ "$p" = 1 ]; then

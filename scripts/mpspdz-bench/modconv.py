@@ -56,6 +56,10 @@ def warm_up():
     return sint(0).reveal()
 
 
+def warm_up_threads(*args, **kwargs):
+    decrypt_batch(*args, **kwargs)
+
+
 def combine_bits(bits, size=1):
     acc = sint(0, size=size)
     for i in range(len(bits)):

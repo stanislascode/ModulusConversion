@@ -87,8 +87,9 @@ Three phases, three CSVs in `results/`:
 | `preproc` | `preproc.csv` | seconds for the batched preprocessing of 1000 decryptions, N=2 |
 
 Run one phase at a time with `PHASES="preproc" ./run_benchmark.sh`. Other
-knobs: `BATCH_SIZE` (default 1000), `THREADS` (default `nproc/4`, see below),
-`PARTIES`, `PINGS`, `PREPROC_N`, `LWE_N`, `RESULTS`.
+knobs: `BATCH_SIZE` (default 1000), `PREP_BATCH` (the VM's `-b`, see below),
+`THREADS` (default 1, see below), `PARTIES`, `PINGS`, `PREPROC_N`, `LWE_N`,
+`RESULTS`.
 
 Every row carries a `mismatches` column: the number of decryptions in the
 batch whose opened plaintext differs from the value fixed in the clear at
@@ -105,39 +106,63 @@ throughput gain is this.
 Do **not** run configurations concurrently to go faster: the parties already
 share the machine, and overlapping runs would contend for CPU and corrupt
 exactly the timings being measured. The parallelism that is safe here is the
-one inside a run — vectorization, and the threading below.
+vectorization.
 
-### Threads per party
+### The preprocessing pool must outsize the batch
 
-Vectorization removes the *round* cost of a batch but not its *CPU* cost:
-each party still evaluates `BATCH_SIZE × n` local multiplications and
-`BATCH_SIZE` MAC checks on one core. On a machine with more cores than
-parties, that leaves most of the machine idle, and throughput is then bounded
-by cores-per-party rather than by the protocol.
+This is the single largest correctness trap in the throughput measurement,
+and an earlier run of this suite fell into it.
 
-`THREADS` splits the batch across `@multithread` tapes inside each party.
-`THREADS=T` cuts the batch into `T` contiguous slices, each opened and
-MAC-checked on its own thread. The default is `nproc/4` — one thread per core
-that the four-party throughput run would otherwise leave unused — and
-`THREADS=1` reproduces the single-threaded behaviour exactly.
+MP-SPDZ generates the authenticated randomness its MAC checks consume in
+batches of `-b` values, **default 1000**. A timed region that opens more than
+`-b` values exhausts the pool and regenerates it mid-run — and that
+regeneration is offline work, billed to the timer. It is invisible unless you
+look at the bytes:
 
-Two things to know before reading a threaded row:
+| batch | MB inside the timer | bytes / decryption |
+|---|---|---|
+| 100 | 0.010 | 100 |
+| 1000 | 6.405 | 6405 |
+| 4000 | 25.62 | 6405 |
 
-- **Threading is applied to the throughput runs only.** At `batch = 1` there
-  is nothing to split, and the extra tape costs a setup its work cannot
-  amortize; the latency rows in both tables are run at `THREADS=1`, and the
-  script hard-codes that rather than taking it from the environment.
-- **Threaded rounds are not comparable to unthreaded ones.** MP-SPDZ counts
-  each thread's rounds separately and warns that they are "counted double due
-  to multi-threading", so a `T`-thread run reports roughly `T` times the
-  rounds of the same work on one thread while taking less wall time. Compare
-  round counts only at equal `THREADS`, which is why `table1.csv` records the
-  column.
+The honest figure is the first row. Two openings of a `Z_{2^64}` share at
+`N = 4` is `2 × 16 × 3 = 96` bytes, and `batch = 100` measures 100. The batches
+at and above 1000 measure preprocessing, at 64× the protocol's own cost.
 
-More threads than spare cores makes things worse, not better: with `T` threads
-per party and `N` parties the machine is asked for `N·T` runnable threads, and
-past `nproc` they contend. On a 20-core host running `N=4` the useful range is
-`T ≤ 5`; on a 2-core sandbox even `T=2` is already oversubscribed.
+`PREP_BATCH` (default `max(20 × BATCH_SIZE, 20000)`) is passed to the VM as
+`-b`, so the pool is generated once. That alone is not enough: the generation
+still has to happen *outside* the timer, which is what the circuit-shaped
+warm-up does — the online programs run `decrypt_batch` once, in full, before
+`start_timer(1)`. A scalar warm-up `Open` does not size the pool and leaves
+the cost in the timer; both pieces are required.
+
+With both in place, `batch = 1000` at `N = 4` reports 0.0964 MB and 11 rounds,
+against the 0.00072 MB and 10 rounds of `batch = 1`. That is what
+vectorization is supposed to look like, and it is the row to trust.
+
+### Threads per party: measured, and not worth it
+
+`THREADS` splits the batch across `@multithread` tapes. It defaults to **1**,
+because measurement says more is worse. At `N = 4`, `batch = 1000`, with the
+pool sized correctly:
+
+| THREADS | time | rounds | dec/sec |
+|---|---|---|---|
+| 1 | 0.0403 s | 11 | 24 800 |
+| 2 | 0.0483 s | 22 | 20 700 |
+| 5 | 0.1368 s | 55 | 7 300 |
+
+The reasoning that motivated threading — that a party is CPU-bound on
+`BATCH_SIZE × n` local multiplications while cores sit idle — is wrong about
+the critical path. The timed region is *two opening instructions*. Each extra
+tape opens separately, so rounds scale with `THREADS` while the CPU work that
+could be split is not what the run is waiting on. At 1 ms ping a round costs
+about 0.7 ms, so 55 rounds spend ~30 ms to save ~18 ms of arithmetic.
+
+The knob remains so the table above can be reproduced, and `table1.csv`
+records the column so no row is ever read at the wrong thread count. Latency
+rows are hard-coded to `THREADS=1` in the script rather than taken from the
+environment.
 
 ### Why `compile.py` cannot just go in your PATH
 
@@ -270,10 +295,10 @@ not the setup around it. Two caveats on `rounds`:
   Use the compiler's `integer opens` count for round complexity: 2 for both
   protocols, being the conversion's opening plus the one that yields the
   message. The measured figure is 10, five per opening.
-- `batch` records MP-SPDZ's `-b` preprocessing batch size. It changes the
-  measured rounds and data whenever a run generates triples, so it must be
-  held constant across any configurations being compared. It is in the CSV
-  for exactly that reason.
+- A batched row should report ~96 bytes per decryption at `N = 4` and a round
+  count within one or two of the `batch = 1` row. Anything far above that is
+  preprocessing inside the timer — see the pool section above — not a slower
+  protocol.
 
 Neither protocol's online phase consumes a triple, so both run at `N = 16` at
 the default batch size. `BATCH` is there for the preprocessing of ModConv2,

@@ -3,7 +3,7 @@ sys.path.insert(0, os.path.join(os.getcwd(), 'Programs/Source'))
 
 from modconv import (Inputs, read_from, read_vec_from, to_array, deal_modconv1,
                      sample_lwe_key, decrypt_batch, warm_up, signed_t,
-                     count_mismatches, Q)
+                     count_mismatches, warm_up_threads, Q)
 from Compiler.types import sint
 from Compiler.library import start_timer, stop_timer, print_ln
 
@@ -34,6 +34,7 @@ m_arr = to_array(read_vec_from(0, batch), batch)
 u_arrs = [to_array(read_vec_from(0, batch), batch) for _ in range(beta)]
 
 warm_up()
+warm_up_threads(sk_arr, mu_arr, m_arr, u_arrs, beta, batch, c_bits, threads)
 
 start_timer(1)
 opened = decrypt_batch(sk_arr, mu_arr, m_arr, u_arrs, beta, batch, c_bits, threads)
