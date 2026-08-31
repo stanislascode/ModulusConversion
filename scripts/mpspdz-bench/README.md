@@ -87,9 +87,9 @@ Three phases, three CSVs in `results/`:
 | `preproc` | `preproc.csv` | seconds for the batched preprocessing of 1000 decryptions, N=2 |
 
 Run one phase at a time with `PHASES="preproc" ./run_benchmark.sh`. Other
-knobs: `BATCH_SIZE` (default 1000), `PREP_BATCH` (the VM's `-b`, see below),
-`THREADS` (default 1, see below), `PARTIES`, `PINGS`, `PREPROC_N`, `LWE_N`,
-`RESULTS`.
+knobs: `BATCH_SIZE` (default 1000), `PREP_BATCH` (the VM's `-b` for batched
+runs, see below), `THREADS` (default 1, see below), `PARTIES`, `PINGS`,
+`PREPROC_N`, `LWE_N`, `RESULTS`.
 
 Every row carries a `mismatches` column: the number of decryptions in the
 batch whose opened plaintext differs from the value fixed in the clear at
@@ -110,8 +110,8 @@ vectorization.
 
 ### The preprocessing pool must outsize the batch
 
-This is the single largest correctness trap in the throughput measurement,
-and an earlier run of this suite fell into it.
+This is the largest correctness trap in the throughput measurement, and an
+earlier run of this suite fell into it.
 
 MP-SPDZ generates the authenticated randomness its MAC checks consume in
 batches of `-b` values, **default 1000**. A timed region that opens more than
@@ -126,42 +126,73 @@ look at the bytes:
 | 4000 | 25.62 | 6405 |
 
 The honest figure is the first row. Two openings of a `Z_{2^64}` share at
-`N = 4` is `2 × 16 × 3 = 96` bytes, and `batch = 100` measures 100. The batches
+`N = 4` is `2 × 16 × 3 = 96` bytes, and `batch = 100` measures 100. The rows
 at and above 1000 measure preprocessing, at 64× the protocol's own cost.
 
-`PREP_BATCH` (default `max(20 × BATCH_SIZE, 20000)`) is passed to the VM as
-`-b`, so the pool is generated once. That alone is not enough: the generation
-still has to happen *outside* the timer, which is what the circuit-shaped
-warm-up does — the online programs run `decrypt_batch` once, in full, before
-`start_timer(1)`. A scalar warm-up `Open` does not size the pool and leaves
-the cost in the timer; both pieces are required.
+Two pieces are needed to keep it out of the timer. `PREP_BATCH` (default
+`max(20 × BATCH_SIZE, 20000)`) is passed to the VM as `-b`, so the pool is
+generated in one go; and the online programs run `decrypt_batch` once, in
+full, before `start_timer(1)`, so that generation happens during the untimed
+warm-up. A scalar warm-up `Open` does not size the pool and leaves the cost
+in the timer; both pieces are required.
 
-With both in place, `batch = 1000` at `N = 4` reports 0.0964 MB and 11 rounds,
-against the 0.00072 MB and 10 rounds of `batch = 1`. That is what
+With both in place, `batch = 1000` at `N = 4` reports 0.0964 MB and 11
+rounds, against 0.00072 MB and 10 rounds at `batch = 1`. That is what
 vectorization is supposed to look like, and it is the row to trust.
 
-### Threads per party: measured, and not worth it
+**The pool is sized per run, not globally.** A `batch = 1` latency run opens
+two values and can never exhaust even the default pool, so forcing a large
+`-b` on it only makes it generate a pool it never touches: measured at
+`N = 16`, that was 69 seconds and 2.5 GB of traffic to decrypt one
+ciphertext, and the run exited nonzero after reporting a correct result.
+Only the throughput and preprocessing runs raise it, by setting `RUN_B`
+before calling `run()`. If you invoke the VM by hand, pass `-b` yourself for
+batched programs and leave it alone for single ones.
 
-`THREADS` splits the batch across `@multithread` tapes. It defaults to **1**,
-because measurement says more is worse. At `N = 4`, `batch = 1000`, with the
-pool sized correctly:
+**How to check a row.** A batched row must report about 96 bytes per
+decryption at `N = 4` — scaling as `N − 1` — and a round count within one or
+two of the `batch = 1` row. Anything far above that is preprocessing inside
+the timer, not a slower protocol, and the row should be discarded rather
+than reported.
 
-| THREADS | time | rounds | dec/sec |
-|---|---|---|---|
-| 1 | 0.0403 s | 11 | 24 800 |
-| 2 | 0.0483 s | 22 | 20 700 |
-| 5 | 0.1368 s | 55 | 7 300 |
+### Threads per party
 
-The reasoning that motivated threading — that a party is CPU-bound on
-`BATCH_SIZE × n` local multiplications while cores sit idle — is wrong about
-the critical path. The timed region is *two opening instructions*. Each extra
-tape opens separately, so rounds scale with `THREADS` while the CPU work that
-could be split is not what the run is waiting on. At 1 ms ping a round costs
-about 0.7 ms, so 55 rounds spend ~30 ms to save ~18 ms of arithmetic.
+`THREADS` splits the batch across `@multithread` tapes and defaults to **1**.
 
-The knob remains so the table above can be reproduced, and `table1.csv`
-records the column so no row is ever read at the wrong thread count. Latency
-rows are hard-coded to `THREADS=1` in the script rather than taken from the
+Whether more than one is worth it is **not settled by the table below**, and
+the table is kept only to show what it does and does not establish. Measured
+at `N = 4`, `batch = 1000`, with the pool sized correctly:
+
+| THREADS | time | rounds |
+|---|---|---|
+| 1 | 0.0403 s | 11 |
+| 2 | 0.0483 s | 22 |
+| 5 | 0.1368 s | 55 |
+
+That was measured on a two-core machine running four parties — already
+oversubscribed by 2× before a single extra thread was asked for, so it could
+only lose. It says nothing about a host with cores to spare.
+
+What the same host does establish is where the time goes. Holding everything
+else fixed and varying the LWE dimension gives 0.014 s at `n = 1` against
+0.037 s at `n = 1024`, so the inner product is about **62% of the online
+time** and it is local arithmetic — exactly the part that parallelises. The
+remaining 38% is the two openings and their MAC checks, which do not.
+
+So on a host with `nproc` comfortably above `N`, sweep it before believing
+either answer:
+
+```sh
+for T in 1 2 5; do THREADS=$T PHASES="throughput" RESULTS=results/t$T ./run_benchmark.sh; done
+```
+
+The cost of extra tapes is that each opens separately, so rounds scale with
+`THREADS` (11 → 22 → 55 above). Threading wins when the CPU it parallelises
+exceeds the round time it adds; at 1 ms ping a round is about 0.7 ms, so the
+crossover depends on both the batch size and the core count, and only a
+sweep on the target host answers it. `table1.csv` records the column so that
+no row is ever read at the wrong thread count, and the latency rows are
+hard-coded to `THREADS=1` in the script rather than taken from the
 environment.
 
 ### Why `compile.py` cannot just go in your PATH
@@ -303,6 +334,28 @@ not the setup around it. Two caveats on `rounds`:
 Neither protocol's online phase consumes a triple, so both run at `N = 16` at
 the default batch size. `BATCH` is there for the preprocessing of ModConv2,
 whose `(N−1)β²` multiplications grow quickly with the party count.
+
+When a row looks wrong, re-run that one configuration by hand with `-v`.
+MP-SPDZ then prints its own split, which is the authority the timer is not:
+
+```
+2 threads spent 4.73 s (  1.97 MB,  36 rounds) on the online phase,
+                5.09 s (154.26 MB, 416 rounds) on the preprocessing/offline phase
+```
+
+The timer measures wall time, so it absorbs whatever preprocessing the run
+generated on demand; that line separates the two. For a measurement that is
+online by construction rather than by subtraction, MP-SPDZ's own route is
+`Fake-Offline.x` plus the VM's `-F` flag, which reads the preprocessing from
+disk. Both need a rebuild with `-DINSECURE`:
+
+```sh
+echo "MY_CFLAGS += -DINSECURE" >> CONFIG.mine
+make clean && make -j8 spdz2k-party.x Fake-Offline.x
+```
+
+That is the configuration to use for a number that will be published against
+an implementation which separates its phases, as Fhenix does.
 
 ## Network emulation
 

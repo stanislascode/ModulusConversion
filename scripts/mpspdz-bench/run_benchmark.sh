@@ -35,8 +35,13 @@ THREADS=${THREADS:-1}
 # MP-SPDZ generates authenticated randomness for MAC checks in batches of -b
 # (default 1000). A timed region opening more than that regenerates mid-run,
 # and the regeneration -- offline work -- lands inside the timer: at
-# batch=1000 that is 6.4 KB/decryption instead of 96 bytes. Sizing the pool
-# above the batch keeps the generation in the untimed warm-up.
+# batch=1000 that is 6.4 KB/decryption instead of 96 bytes.
+#
+# This is sized PER RUN, not globally: a batch=1 latency run opens 2 values
+# and can never exhaust the default pool, so forcing a big -b on it only
+# makes it generate a pool it never touches (measured: 69 s and 2.5 GB of
+# traffic for one decryption at N=16). Only the throughput runs raise it,
+# by setting RUN_B before calling run().
 PREP_BATCH=${PREP_BATCH:-$(( BATCH_SIZE * 20 > 20000 ? BATCH_SIZE * 20 : 20000 ))}
 
 cp "$HERE"/modconv.py "$HERE"/modconv*.mpc "$MPSPDZ/Programs/Source/"
@@ -106,7 +111,7 @@ run() {
     for a in "$@"; do prog="$prog-$a"; done
     local log="$RESULTS/$prog-N$n.log"
     ./compile.py -R 64 "$src" "$@" > "$RESULTS/$prog-N$n-compile.log" 2>&1
-    if ! Scripts/spdz2k.sh -N "$n" -d -b "$PREP_BATCH" "$prog" > "$log" 2>&1; then
+    if ! Scripts/spdz2k.sh -N "$n" -d -b "${RUN_B:-1000}" "$prog" > "$log" 2>&1; then
         echo "  RUN FAILED, see $log" >&2
         RUN_S=0; RUN_MB=0; RUN_ROUNDS=0; RUN_ERR=-1
         return
@@ -137,12 +142,12 @@ if [[ " $PHASES " == *" latency "* ]] || [[ " $PHASES " == *" throughput "* ]]; 
         if [ "$p" = 1 ]; then
             run 4 modconv1_online 2 1 "$LWE_N" 1
             L_S=$RUN_S; L_E=$RUN_ERR
-            run 4 modconv1_online 2 "$BATCH_SIZE" "$LWE_N" "$THREADS"
+            RUN_B=$PREP_BATCH run 4 modconv1_online 2 "$BATCH_SIZE" "$LWE_N" "$THREADS"
             NAME=modconv1; BETA=2
         else
             run 4 modconv2_online 4 "$B2" 1 "$LWE_N" 1
             L_S=$RUN_S; L_E=$RUN_ERR
-            run 4 modconv2_online 4 "$B2" "$BATCH_SIZE" "$LWE_N" "$THREADS"
+            RUN_B=$PREP_BATCH run 4 modconv2_online 4 "$B2" "$BATCH_SIZE" "$LWE_N" "$THREADS"
             NAME=modconv2; BETA=$B2
         fi
         TP=$(awk "BEGIN{printf \"%.1f\", $BATCH_SIZE/$RUN_S}")
@@ -175,10 +180,10 @@ if [[ " $PHASES " == *" preproc "* ]]; then
     echo "protocol,parties,beta,batch,ping_ms,bandwidth,net_emulated,time_s,mb_party0,rounds,mismatches" > "$CSV3"
     net 1 1gbit
     B2=$(beta2_of "$PREPROC_N")
-    run "$PREPROC_N" modconv1_preproc 2 "$BATCH_SIZE"
+    RUN_B=$PREP_BATCH run "$PREPROC_N" modconv1_preproc 2 "$BATCH_SIZE"
     echo "modconv1,$PREPROC_N,2,$BATCH_SIZE,1,1gbit,$EMU,$RUN_S,$RUN_MB,$RUN_ROUNDS,$RUN_ERR" >> "$CSV3"
     echo "=== preproc modconv1 : $RUN_S s for $BATCH_SIZE ==="
-    run "$PREPROC_N" modconv2_preproc "$PREPROC_N" "$B2" "$BATCH_SIZE"
+    RUN_B=$PREP_BATCH run "$PREPROC_N" modconv2_preproc "$PREPROC_N" "$B2" "$BATCH_SIZE"
     echo "modconv2,$PREPROC_N,$B2,$BATCH_SIZE,1,1gbit,$EMU,$RUN_S,$RUN_MB,$RUN_ROUNDS,$RUN_ERR" >> "$CSV3"
     echo "=== preproc modconv2 : $RUN_S s for $BATCH_SIZE ==="
 fi
