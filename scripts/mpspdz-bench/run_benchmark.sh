@@ -18,36 +18,47 @@ fi
 HERE="$(cd "$(dirname "$0")" && pwd)"
 PHASES=${PHASES:-"latency throughput preproc"}
 ALLOW_NO_TC=${ALLOW_NO_TC:-0}
-BATCH_SIZE=${BATCH_SIZE:-1000}
+
+# The online phase reads its preprocessing from disk (-F), so the timer covers
+# the online phase and nothing else. That is what makes the batch sweep
+# meaningful and what makes the figure comparable to an implementation that
+# separates its phases. Fake-Offline.x needs a build with -DINSECURE.
+if [[ " $PHASES " == *" latency "* ]] || [[ " $PHASES " == *" throughput "* ]]; then
+    if [ ! -x "$MPSPDZ/Fake-Offline.x" ]; then
+        echo "$MPSPDZ/Fake-Offline.x is missing. The online phases read their" >&2
+        echo "preprocessing from disk, which needs it. Build it with:" >&2
+        echo "    cd $MPSPDZ" >&2
+        echo "    echo 'MY_CFLAGS += -DINSECURE' >> CONFIG.mine" >&2
+        echo "    make clean && make -j8 spdz2k-party.x Fake-Offline.x" >&2
+        exit 1
+    fi
+fi
+
+BATCHES=${BATCHES:-"1000 5000 10000"}
+THREAD_LIST=${THREAD_LIST:-"1 2 4 5"}
+REPS=${REPS:-5}
 PARTIES=${PARTIES:-"4 8 16"}
 PINGS=${PINGS:-"1 10 100"}
 PREPROC_N=${PREPROC_N:-2}
+PREPROC_BATCH=${PREPROC_BATCH:-1000}
 LWE_N=${LWE_N:-1024}
 RESULTS=${RESULTS:-"$HERE/results"}
 
-# One thread per party. Extra threads split the batch across tapes that each
-# open separately, multiplying rounds without parallelising anything that is
-# actually on the critical path. Measured at N=4, batch=1000: 11 rounds at
-# THREADS=1, 22 at 2, 55 at 5, monotonically slower. The knob stays for
-# reproducing that.
-THREADS=${THREADS:-1}
+# SPDZ2k parameters: the machine ring is 2^64 and the MAC ring 2^64.
+K_PARAM=${K_PARAM:-64}
+S_PARAM=${S_PARAM:-64}
 
-# MP-SPDZ generates authenticated randomness for MAC checks in batches of -b
-# (default 1000). A timed region opening more than that regenerates mid-run,
-# and the regeneration -- offline work -- lands inside the timer: at
-# batch=1000 that is 6.4 KB/decryption instead of 96 bytes.
-#
-# This is sized PER RUN, not globally: a batch=1 latency run opens 2 values
-# and can never exhaust the default pool, so forcing a big -b on it only
-# makes it generate a pool it never touches (measured: 69 s and 2.5 GB of
-# traffic for one decryption at N=16). Only the throughput runs raise it,
-# by setting RUN_B before calling run().
-PREP_BATCH=${PREP_BATCH:-$(( BATCH_SIZE * 20 > 20000 ? BATCH_SIZE * 20 : 20000 ))}
+# The preprocessing phase measures itself, so it cannot read itself from disk.
+# It keeps the pool-size flag instead, sized above its batch: MP-SPDZ generates
+# MAC-check randomness in batches of -b (default 1000), and a timed region
+# opening more than that regenerates mid-run, billing offline work to the timer.
+PREP_BATCH=${PREP_BATCH:-$(( PREPROC_BATCH * 20 > 20000 ? PREPROC_BATCH * 20 : 20000 ))}
 
 cp "$HERE"/modconv.py "$HERE"/modconv*.mpc "$MPSPDZ/Programs/Source/"
 mkdir -p "$RESULTS"
 cd "$MPSPDZ"
 
+# ------------------------------------------------------------------ network
 TC=""
 if command -v tc >/dev/null 2>&1; then
     if [ "$(id -u)" -eq 0 ]; then TC="tc"; elif command -v sudo >/dev/null 2>&1; then TC="sudo tc"; fi
@@ -59,7 +70,7 @@ if ! command -v tc >/dev/null 2>&1; then
     echo "WARNING: tc not found. Install it:  sudo apt install iproute2"
 elif [ -z "$TC" ]; then
     echo "WARNING: tc needs root and sudo is unavailable. Re-run this script as root."
-elif ! $TC qdisc add dev lo root netem delay 1ms rate 1gbit 2>"$TCERR"; then
+elif ! $TC qdisc replace dev lo root netem delay 1ms rate 1gbit 2>"$TCERR"; then
     echo "WARNING: tc could not install a netem qdisc:"
     sed 's/^/             /' "$TCERR"
     echo "         'qdisc kind is unknown' -> kernel lacks sch_netem:"
@@ -72,7 +83,7 @@ fi
 rm -f "$TCERR"
 
 if [ "$HAVE_TC" -eq 1 ]; then
-    trap '$TC qdisc del dev lo root >/dev/null 2>&1 || true' EXIT
+    trap '$TC qdisc del dev lo root >/dev/null 2>&1 || true' EXIT INT TERM HUP
 elif [ "$ALLOW_NO_TC" = "1" ]; then
     echo "         ALLOW_NO_TC=1: running unshaped anyway. The ping and bandwidth"
     echo "         columns then name the INTENDED condition, not an applied one,"
@@ -85,16 +96,17 @@ else
     exit 1
 fi
 
-# measured loopback RTT, so a wrong shaping is caught before a long run
 rtt_now() {
     command -v ping >/dev/null 2>&1 || { echo "n/a"; return; }
     ping -c 3 -q 127.0.0.1 2>/dev/null | tail -1 | awk -F'= ' '{print $2}' | cut -d/ -f2
 }
 
+# netem is attached with 'replace', which succeeds whether lo currently carries
+# noqueue, a stale netem, or nothing. 'add' fails on the first two with
+# "Exclusivity flag on, cannot modify", which stalled an earlier sweep.
 net() {
     [ "$HAVE_TC" -eq 1 ] || { EMU=no; return 0; }
-    $TC qdisc del dev lo root >/dev/null 2>&1 || true
-    $TC qdisc add dev lo root netem delay "$(awk "BEGIN{print $1/2}")ms" rate "$2"
+    $TC qdisc replace dev lo root netem delay "$(awk "BEGIN{print $1/2}")ms" rate "$2"
     if ! $TC qdisc show dev lo | grep -q netem; then
         echo "ERROR: netem is not attached to lo after adding it." >&2
         exit 1
@@ -103,15 +115,36 @@ net() {
     echo "    network: asked ${1}ms/$2, measured loopback RTT $(rtt_now) ms"
 }
 
-# run <parties> <source> <args...>  -> sets RUN_S RUN_MB RUN_ROUNDS RUN_ERR
-run() {
-    local n=$1 src=$2
-    shift 2
+# ------------------------------------------------------------------ offline data
+declare -A PREP_SIZE
+
+# ensure_prep <parties> <items>
+# Fake-Offline.x writes a trusted dealer's preprocessing to disk. This is not a
+# secure offline phase and is not what the preproc phase measures; it exists so
+# that the online timer covers the online phase alone.
+ensure_prep() {
+    local n=$1 need=$2 have=${PREP_SIZE[$1]:-0}
+    [ "$need" -le "$have" ] && return 0
+    echo "    offline data for N=$n: generating $need items"
+    ./Fake-Offline.x "$n" -Z "$K_PARAM" -S "$S_PARAM" --default "$need" \
+        > "$RESULTS/fake-offline-N$n-$need.log" 2>&1
+    PREP_SIZE[$1]=$need
+}
+
+# inputs_needed <batch> <beta>   -- lwe_n + (2 + beta) * batch, with margin
+inputs_needed() {
+    awk "BEGIN{printf \"%d\", ($LWE_N + (2 + $2) * $1) * 1.5 + 10000}"
+}
+
+# ------------------------------------------------------------------ runners
+# run_online <parties> <src> <args...> -> RUN_S RUN_MB RUN_ROUNDS RUN_ERR
+run_online() {
+    local n=$1 src=$2; shift 2
     local prog="$src" a
     for a in "$@"; do prog="$prog-$a"; done
     local log="$RESULTS/$prog-N$n.log"
     ./compile.py -R 64 "$src" "$@" > "$RESULTS/$prog-N$n-compile.log" 2>&1
-    if ! Scripts/spdz2k.sh -N "$n" -d -b "${RUN_B:-1000}" "$prog" > "$log" 2>&1; then
+    if ! Scripts/spdz2k.sh -N "$n" -d -F "$prog" > "$log" 2>&1; then
         echo "  RUN FAILED, see $log" >&2
         RUN_S=0; RUN_MB=0; RUN_ROUNDS=0; RUN_ERR=-1
         return
@@ -119,9 +152,42 @@ run() {
     eval "$(python3 "$HERE/parse_run.py" "$log")"
 }
 
+# run_preproc <parties> <src> <args...> -- pool-sized, not file-fed
+run_preproc() {
+    local n=$1 src=$2; shift 2
+    local prog="$src" a
+    for a in "$@"; do prog="$prog-$a"; done
+    local log="$RESULTS/$prog-N$n.log"
+    ./compile.py -R 64 "$src" "$@" > "$RESULTS/$prog-N$n-compile.log" 2>&1
+    if ! Scripts/spdz2k.sh -N "$n" -d -b "$PREP_BATCH" "$prog" > "$log" 2>&1; then
+        echo "  RUN FAILED, see $log" >&2
+        RUN_S=0; RUN_MB=0; RUN_ROUNDS=0; RUN_ERR=-1
+        return
+    fi
+    eval "$(python3 "$HERE/parse_run.py" "$log")"
+}
+
+median() { printf '%s\n' "$@" | sort -g | awk '{v[NR]=$1} END{print (NR%2)?v[(NR+1)/2]:(v[NR/2]+v[NR/2+1])/2}'; }
+
 beta2_of() { local b=1; while [ "$b" -lt $(($1 + 1)) ]; do b=$((b * 2)); done; echo "$b"; }
 
-# ---------------------------------------------------------------- check
+# repeat_online <reps> <parties> <src> <args...>
+#   -> MED_S (median time), LAST_MB, LAST_ROUNDS, ERR_TOTAL, RAW (all times)
+repeat_online() {
+    local reps=$1; shift
+    local times=() i
+    ERR_TOTAL=0
+    for ((i = 0; i < reps; i++)); do
+        run_online "$@"
+        times+=("$RUN_S")
+        LAST_MB=$RUN_MB; LAST_ROUNDS=$RUN_ROUNDS
+        ERR_TOTAL=$((ERR_TOTAL + RUN_ERR))
+    done
+    RAW="${times[*]}"
+    MED_S=$(median "${times[@]}")
+}
+
+# ------------------------------------------------------------------ check
 if [[ " $PHASES " == *" check "* ]]; then
     echo "Checking network emulation before committing to a long run."
     for PING in $PINGS; do
@@ -131,62 +197,86 @@ if [[ " $PHASES " == *" check "* ]]; then
     exit 0
 fi
 
-# ---------------------------------------------------------------- table 1
-if [[ " $PHASES " == *" latency "* ]] || [[ " $PHASES " == *" throughput "* ]]; then
-    CSV1="$RESULTS/table1.csv"
-    echo "protocol,parties,beta,ping_ms,bandwidth,net_emulated,latency_ms,throughput_dec_per_sec,batch,threads,mismatches" > "$CSV1"
+# ------------------------------------------------------------------ throughput
+# Sweeps threads x batch and keeps the best median. Both are reported, because
+# a throughput figure without them is not reproducible.
+if [[ " $PHASES " == *" throughput "* ]]; then
+    CSV1="$RESULTS/throughput.csv"
+    echo "protocol,parties,beta,ping_ms,bandwidth,net_emulated,batch,threads,reps,time_s_median,throughput_dec_per_sec,bytes_per_dec,rounds,mismatches" > "$CSV1"
+    SWEEP="$RESULTS/throughput-sweep.csv"
+    echo "protocol,batch,threads,throughput_dec_per_sec,bytes_per_dec,rounds,mismatches,raw_times_s" > "$SWEEP"
     net 1 1gbit
-    echo "    threads/party $THREADS, preprocessing pool -b $PREP_BATCH"
     B2=$(beta2_of 4)
+    echo "    sweeping threads {$THREAD_LIST} x batch {$BATCHES}, $REPS reps each"
+
     for p in 1 2; do
-        if [ "$p" = 1 ]; then
-            run 4 modconv1_online 2 1 "$LWE_N" 1
-            L_S=$RUN_S; L_E=$RUN_ERR
-            RUN_B=$PREP_BATCH run 4 modconv1_online 2 "$BATCH_SIZE" "$LWE_N" "$THREADS"
-            NAME=modconv1; BETA=2
-        else
-            run 4 modconv2_online 4 "$B2" 1 "$LWE_N" 1
-            L_S=$RUN_S; L_E=$RUN_ERR
-            RUN_B=$PREP_BATCH run 4 modconv2_online 4 "$B2" "$BATCH_SIZE" "$LWE_N" "$THREADS"
-            NAME=modconv2; BETA=$B2
-        fi
-        TP=$(awk "BEGIN{printf \"%.1f\", $BATCH_SIZE/$RUN_S}")
-        LMS=$(awk "BEGIN{printf \"%.4f\", $L_S*1000}")
-        echo "$NAME,4,$BETA,1,1gbit,$EMU,$LMS,$TP,$BATCH_SIZE,$THREADS,$((L_E + RUN_ERR))" >> "$CSV1"
-        echo "=== table1 $NAME : latency ${LMS} ms, throughput $TP dec/s ==="
+        if [ "$p" = 1 ]; then NAME=modconv1; BETA=2; else NAME=modconv2; BETA=$B2; fi
+        BEST_TP=0; BEST_B=0; BEST_T=0; BEST_MB=0; BEST_R=0; BEST_E=0; BEST_S=0
+        for B in $BATCHES; do
+            ensure_prep 4 "$(inputs_needed "$B" "$BETA")"
+            for T in $THREAD_LIST; do
+                if [ "$p" = 1 ]; then
+                    repeat_online "$REPS" 4 modconv1_online 2 "$B" "$LWE_N" "$T"
+                else
+                    repeat_online "$REPS" 4 modconv2_online 4 "$B2" "$B" "$LWE_N" "$T"
+                fi
+                if [ "$(awk "BEGIN{print ($MED_S > 0)}")" != 1 ]; then
+                    echo "    $NAME B=$B T=$T: FAILED"
+                    echo "$NAME,$B,$T,0,0,0,-1,\"$RAW\"" >> "$SWEEP"
+                    continue
+                fi
+                TP=$(awk "BEGIN{printf \"%.1f\", $B/$MED_S}")
+                BPD=$(awk "BEGIN{printf \"%.1f\", $LAST_MB*1048576/$B}")
+                echo "$NAME,$B,$T,$TP,$BPD,$LAST_ROUNDS,$ERR_TOTAL,\"$RAW\"" >> "$SWEEP"
+                echo "    $NAME B=$B T=$T: $TP dec/s, $BPD bytes/dec, $LAST_ROUNDS rounds, mismatches $ERR_TOTAL"
+                # a row is only admissible if it decrypted correctly every time
+                [ "$ERR_TOTAL" -ne 0 ] && continue
+                if [ "$(awk "BEGIN{print ($TP > $BEST_TP)}")" = 1 ]; then
+                    BEST_TP=$TP; BEST_B=$B; BEST_T=$T; BEST_MB=$BPD
+                    BEST_R=$LAST_ROUNDS; BEST_E=$ERR_TOTAL; BEST_S=$MED_S
+                fi
+            done
+        done
+        echo "$NAME,4,$BETA,1,1gbit,$EMU,$BEST_B,$BEST_T,$REPS,$BEST_S,$BEST_TP,$BEST_MB,$BEST_R,$BEST_E" >> "$CSV1"
+        echo "=== $NAME best: $BEST_TP dec/s at batch=$BEST_B threads=$BEST_T ==="
     done
 fi
 
-# ---------------------------------------------------------------- table 2
+# ------------------------------------------------------------------ latency
+# One decryption at a time, across the ping x parties grid. Threads are pinned
+# to 1: at batch=1 there is nothing to split and an extra tape only adds a tape.
 if [[ " $PHASES " == *" latency "* ]]; then
-    CSV2="$RESULTS/table2.csv"
-    echo "protocol,parties,beta,ping_ms,bandwidth,net_emulated,latency_ms,rounds,mb_party0,mismatches" > "$CSV2"
+    CSV2="$RESULTS/latency.csv"
+    echo "protocol,parties,beta,ping_ms,bandwidth,net_emulated,reps,latency_ms_median,rounds,bytes_per_dec,mismatches,raw_times_s" > "$CSV2"
     for PING in $PINGS; do
         net "$PING" 1gbit
         for N in $PARTIES; do
             B2=$(beta2_of "$N")
-            run "$N" modconv1_online 2 1 "$LWE_N" 1
-            echo "modconv1,$N,2,$PING,1gbit,$EMU,$(awk "BEGIN{printf \"%.4f\", $RUN_S*1000}"),$RUN_ROUNDS,$RUN_MB,$RUN_ERR" >> "$CSV2"
-            run "$N" modconv2_online "$N" "$B2" 1 "$LWE_N" 1
-            echo "modconv2,$N,$B2,$PING,1gbit,$EMU,$(awk "BEGIN{printf \"%.4f\", $RUN_S*1000}"),$RUN_ROUNDS,$RUN_MB,$RUN_ERR" >> "$CSV2"
-            echo "=== table2 N=$N ping=${PING}ms done ==="
+            ensure_prep "$N" "$(inputs_needed 1 "$B2")"
+            repeat_online "$REPS" "$N" modconv1_online 2 1 "$LWE_N" 1
+            BPD=$(awk "BEGIN{printf \"%.1f\", $LAST_MB*1048576}")
+            echo "modconv1,$N,2,$PING,1gbit,$EMU,$REPS,$(awk "BEGIN{printf \"%.4f\", $MED_S*1000}"),$LAST_ROUNDS,$BPD,$ERR_TOTAL,\"$RAW\"" >> "$CSV2"
+            repeat_online "$REPS" "$N" modconv2_online "$N" "$B2" 1 "$LWE_N" 1
+            BPD=$(awk "BEGIN{printf \"%.1f\", $LAST_MB*1048576}")
+            echo "modconv2,$N,$B2,$PING,1gbit,$EMU,$REPS,$(awk "BEGIN{printf \"%.4f\", $MED_S*1000}"),$LAST_ROUNDS,$BPD,$ERR_TOTAL,\"$RAW\"" >> "$CSV2"
+            echo "=== latency N=$N ping=${PING}ms done ==="
         done
     done
 fi
 
-# ---------------------------------------------------------------- offline
+# ------------------------------------------------------------------ preprocessing
 if [[ " $PHASES " == *" preproc "* ]]; then
     CSV3="$RESULTS/preproc.csv"
     echo "protocol,parties,beta,batch,ping_ms,bandwidth,net_emulated,time_s,mb_party0,rounds,mismatches" > "$CSV3"
     net 1 1gbit
     B2=$(beta2_of "$PREPROC_N")
-    RUN_B=$PREP_BATCH run "$PREPROC_N" modconv1_preproc 2 "$BATCH_SIZE"
-    echo "modconv1,$PREPROC_N,2,$BATCH_SIZE,1,1gbit,$EMU,$RUN_S,$RUN_MB,$RUN_ROUNDS,$RUN_ERR" >> "$CSV3"
-    echo "=== preproc modconv1 : $RUN_S s for $BATCH_SIZE ==="
-    RUN_B=$PREP_BATCH run "$PREPROC_N" modconv2_preproc "$PREPROC_N" "$B2" "$BATCH_SIZE"
-    echo "modconv2,$PREPROC_N,$B2,$BATCH_SIZE,1,1gbit,$EMU,$RUN_S,$RUN_MB,$RUN_ROUNDS,$RUN_ERR" >> "$CSV3"
-    echo "=== preproc modconv2 : $RUN_S s for $BATCH_SIZE ==="
+    run_preproc "$PREPROC_N" modconv1_preproc 2 "$PREPROC_BATCH"
+    echo "modconv1,$PREPROC_N,2,$PREPROC_BATCH,1,1gbit,$EMU,$RUN_S,$RUN_MB,$RUN_ROUNDS,$RUN_ERR" >> "$CSV3"
+    echo "=== preproc modconv1 : $RUN_S s for $PREPROC_BATCH ==="
+    run_preproc "$PREPROC_N" modconv2_preproc "$PREPROC_N" "$B2" "$PREPROC_BATCH"
+    echo "modconv2,$PREPROC_N,$B2,$PREPROC_BATCH,1,1gbit,$EMU,$RUN_S,$RUN_MB,$RUN_ROUNDS,$RUN_ERR" >> "$CSV3"
+    echo "=== preproc modconv2 : $RUN_S s for $PREPROC_BATCH ==="
 fi
 
 echo
-echo "Results in $RESULTS/{table1,table2,preproc}.csv"
+echo "Results in $RESULTS/{throughput,throughput-sweep,latency,preproc}.csv"

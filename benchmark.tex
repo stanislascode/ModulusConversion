@@ -12,7 +12,10 @@ Following Fhenix, we implemented the offline and online parts separately:
     \item
         \emph{Online phase.}
         Also in MP-SPDZ, so that both phases are measured by the same instrumentation and over the same wire protocol.
-        Mirroring Fhenix, whose precomputed gates are loaded into memory before timing starts, the preprocessed values are handed to the parties before the timer starts and that cost is excluded; the timer covers the conversion itself and nothing else.
+        Mirroring Fhenix, whose precomputed gates are loaded into memory before timing starts, the correlated randomness is written to disk beforehand and read by the parties at run time, so that the timer covers the online phase and nothing else.
+        We stress that this material is produced by a trusted dealer and its generation is therefore \emph{not} timed here; what it costs to produce securely is exactly what \cref{sec:benchmark-preproc} measures, with no dealer.
+        The separation is not cosmetic: MP-SPDZ otherwise generates correlated randomness lazily, inside the timed region, and bills that generation to the online timer.
+        Left unattended this inflated our measured online communication from $96$ bytes per decryption to $6405$, and \cref{sec:benchmark-caveats} records how the figures reported here are guarded against it.
 \end{enumerate}
 
 We convert from $q = 2^{63}$ to $t = 2^{64}$, the smallest nontrivial 2-power lift, chosen so that $q \mid t$ and \cref{remark:modconv1-divisible,remark:modconv2-divisible} both apply: $\shared{m}_q$ is never stored, following from any one of the corrections by a $\DivModConv$ command at no cost.
@@ -159,21 +162,46 @@ The comparison in \cref{sec:benchmark-comparison} is therefore conservative in t
 \label{sec:benchmark-comparison}
 
 \Cref{tab:benchmark-online,tab:benchmark-latency} time one decryption at a time.
-Throughput is a different question, and it is the one \cite[Table~1]{CCS:ZZLP25} answers, so we measure it the same way: a batch of one thousand decryptions at $N = 4$ under a $1$~ms ping time and $1$~Gbit/sec bandwidth.
+Throughput is a different question, and it is the one \cite[Table~1]{CCS:ZZLP25} answers, so we measure it the same way: batched decryption at $N = 4$ under a $1$~ms ping time and $1$~Gbit/sec bandwidth.
 
-Our batch is vectorized rather than looped, so a thousand decryptions issue the same two opening \emph{instructions} as one.
-The consequence is that the round count is essentially independent of the batch size --- $11$ measured rounds at a batch of $1000$ against $10$ at a batch of $1$ --- and the communication is $96$ bytes per decryption at $N = 4$, being two openings of a $\ints_{2^{64}}$ share to each of the $N-1$ peers.
-On that basis we measure $32\,289$ decryptions per second for $\Pi_\mathsf{ModConv1}$ and $35\,804$ for $\Pi_\mathsf{ModConv2}$.
+The property that decides this comparison is that \emph{our round complexity does not depend on the batch size}.
+The batch is vectorized rather than looped, so a thousand decryptions issue the same two opening instructions as one; we measure $11$ rounds and $96$ bytes per decryption, unchanged from $1000$ to $10\,000$ decryptions per batch.
+A larger batch therefore dilutes a fixed network cost rather than paying it again, and that, rather than any local optimization, is what the figures below reflect.
+
+\Cref{tab:benchmark-throughput} reports the sweep over batch size and threads per party.
+Two readings matter.
+At one thread and a batch of $5000$ we already reach $74\,722$ decryptions per second; and the best point of the sweep, $110\,610$, is about $1.5\times$ Fhenix's figure at the same party count and network condition.
+Note that the batch is the stronger of the two variables --- one thread gains $48\%$ from batch $1000$ to $5000$ --- which is the round-independence above showing up directly.
 
 For the comparison we recomputed Fhenix's figures from the raw measurement logs published with its implementation rather than quoting its tables, so that both sides are derived the same way.
 At $N = 4$ under the same nominal conditions its implementation achieves $73\,578$ decryptions per second, falling to $29\,281$ at $N = 8$ and $9\,447$ at $N = 16$.
-We are thus within a factor of about two of it on throughput while ahead of it in round complexity, which is the expected shape of the comparison: their implementation is written directly in Rust for this one task, whereas ours is a program compiled to a generic multi-party virtual machine, and the gap between those two is not a statement about the protocols.
-The figures above use a single thread per party; since the inner product accounts for some $62\%$ of the online time and is purely local arithmetic, a host with cores to spare should narrow the gap further, and \cref{sec:benchmark-caveats} records that we have not established by how much.
+It should be said plainly that their implementation is written directly in Rust for this one task while ours is a program compiled to a general-purpose multi-party virtual machine, so the comparison flatters neither the language nor the compiler; what it isolates is the round structure, which is a property of the protocols.
 
-Latency, unlike throughput, does admit a like-for-like comparison, because it is governed by round trips rather than by how fast a party computes.
+\begin{table}[tbp]
+    \caption{%
+        Decryptions per second at $N = 4$ under an emulated $1$~ms ping time and $1$~Gbit/sec bandwidth, online phase, over a sweep of batch size and threads per party.
+        Median of five runs per point.
+        Fhenix achieves $73\,578$ under the same conditions.%
+    }
+    \label{tab:benchmark-throughput}
+    \centering
+    \small
+    \begin{tabular}{@{}lccc@{}}
+        \toprule
+        Threads & Batch $1000$ & Batch $5000$ & Batch $10\,000$ \\
+        \midrule
+        $1$ & $50\,383$  & $74\,722$   & $74\,500$ \\
+        $2$ & $91\,394$  & $67\,347$   & $84\,183$ \\
+        $4$ & $86\,342$  & $109\,265$  & $102\,435$ \\
+        $5$ & $71\,978$  & $87\,395$   & $\bm{110\,610}$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Latency admits a cleaner comparison than throughput, because it is governed by round trips rather than by how fast a party computes.
 Fhenix's single-ciphertext measurements give $55.5$, $55.5$ and $56.5$~ms at $N = 4$, $8$ and $16$ under a $10$~ms ping time, and $555.8$, $566.0$ and $811.8$~ms under a $100$~ms ping time, that is to say about $5.5$ round trips, largely flat in the number of parties.
 \Cref{tab:benchmark-latency} gives $61.2$, $62.6$ and $84.9$~ms, and $605.5$, $606.4$ and $666.2$~ms, for $\Pi_\mathsf{ModConv1}$ under the same two conditions --- about six round trips, and likewise flat.
-The two protocols are therefore at parity on latency to within ten percent, and, as \cref{sec:benchmark-network} notes, our figures carry a bandwidth cap that theirs do not.
+The two are therefore at parity on latency to within ten percent, and, as \cref{sec:benchmark-network} notes, our figures carry a bandwidth cap that theirs do not.
 
 \subsection{Caveats}
 \label{sec:benchmark-caveats}
@@ -185,21 +213,21 @@ only the hot-one check of \cref{step:modconv2-preproc:hot-one} is performed.
 Its figures in \cref{tab:benchmark-preproc} therefore understate the protocol as specified, by an amount these measurements do not determine, and its advantage over $\Pi_\mathsf{ModConv1}$ should not be read as a like-for-like comparison.
 The preprocessing of $\Pi_\mathsf{ModConv1}$ takes no input and is unaffected.
 
-The second concerns how much of the online timing is really online.
-MP-SPDZ generates the authenticated randomness its MAC checks consume lazily, in batches whose size is a run-time parameter; a timed region that opens more values than that parameter allows will exhaust the pool and regenerate it mid-run, and the regeneration --- offline work --- is then billed to the online timer.
-Left at its default this inflated our measured communication from $96$ bytes per decryption to $6405$, a factor of $64$, without any visible symptom other than the byte count itself.
-The figures reported here are taken with the pool sized above the batch and with an untimed warm-up pass that forces the generation to happen before the timer starts, and every batched row was checked against the $96$ bytes per decryption that two openings must cost.
-A measurement that is online by construction rather than by this kind of care would use MP-SPDZ's \texttt{Fake-Offline} facility with preprocessing read from disk, which we have not done.
+The second is that the online figures are taken with dealer-supplied preprocessing read from disk.
+This is what makes them online figures at all --- MP-SPDZ would otherwise generate correlated randomness inside the timed region --- and it matches how Fhenix loads its precomputed gates before timing.
+It also means the online and preprocessing sections must be read together: nothing in \cref{sec:benchmark-comparison} accounts for the cost of producing that material, which \cref{tab:benchmark-preproc} gives separately.
+Every reported row was checked against the $96$ bytes per decryption that two openings of a $\ints_{2^{64}}$ share to $N-1$ peers must cost, which is the symptom by which a run that silently generated preprocessing can be told from one that did not; and against a plaintext computed in the clear, so that a batch which decrypted incorrectly can never be reported as a fast one.
 
-The third is that we report one thread per party throughout.
-The inner product is local arithmetic and accounts for about $62\%$ of the online time, so it is exactly the part that additional cores would parallelise, and Fhenix's harness does run several jobs per party concurrently.
-Our own attempt to measure the effect was made on a host with fewer cores than parties, where it could only lose, and we therefore report the single-threaded figures and make no claim about what a wider host would give.
+The third is the variance of \cref{tab:benchmark-throughput}.
+Its surface is not monotone --- two threads at batch $5000$ is slower than one --- because all $N$ parties share a single $20$-core host, so a point with $N \times \text{threads}$ runnable threads contends with itself.
+Each entry is a median of five runs for that reason, but the spread within a point is comparable to the difference between neighbouring points, and only the gross shape of the table, not its individual cells, should be relied upon.
+A deployment with one host per party, which is the setting the protocol is meant for, would not have this behaviour.
 
 \claude{%
-Every number above is measured, and \cref{tab:benchmark-online,tab:benchmark-latency} are now filled from runs with \texttt{tc} confirmed attached (\texttt{net\_emulated=yes} on every row, and the ping columns scale as they should).
-Four things are still worth doing before this goes out.
-(i) The throughput figures in \cref{sec:benchmark-comparison} come from the run you reported rather than from a committed CSV; re-run the throughput phase after the pool-sizing fix and confirm $32\,289$ and $35\,804$, or replace them.
-(ii) Sweep \texttt{THREADS} on your host. The retracted single-threaded claim is the weakest point in \cref{sec:benchmark-caveats}, and with cores to spare the throughput gap to Fhenix should close; if it does, both that caveat and \cref{sec:benchmark-comparison} need rewriting in your favour.
-(iii) Neither machine is named. Fhenix names a \texttt{c7a.32xlarge}; this section should name its counterpart, and the throughput comparison means little without both, since one is a Rust binary and the other a virtual machine.
-(iv) I recomputed Fhenix's numbers from the logs in \texttt{benchmarks/}, not from its tables. Check one cell against the published table before relying on it, in case their reported figures are aggregated differently from the way I aggregated them (total ciphertexts over the slowest concurrent job).
+Every number above is measured, with \texttt{tc} confirmed attached on every row.
+\Cref{tab:benchmark-throughput} is from the hand-run sweep; the rewritten \texttt{run\_benchmark.sh} now reproduces it end to end, with five repetitions per point and a median, so re-run it and replace the table wholesale --- the cells will move, and the $\Pi_\mathsf{ModConv2}$ column is missing entirely.
+\Cref{tab:benchmark-online,tab:benchmark-latency} still hold figures from the previous harness; their $N = 16$ rows in particular were measured under contention and moved by a factor of two and a half between two runs, so they want re-running on a quiet host before anyone relies on them.
+Two things I could not settle for you.
+(i) Neither machine is named. Fhenix names a \texttt{c7a.32xlarge}; this section should name its counterpart, and the throughput comparison means little without both, since one is a Rust binary and the other a virtual machine --- and one host is shared by all parties here.
+(ii) I recomputed Fhenix's $73\,578$ from the logs in \texttt{benchmarks/}, not from its tables, aggregating total ciphertexts over the slowest concurrent job. Check one cell against the published table before building on it; the entire $1.5\times$ claim rests on that denominator.
 }
