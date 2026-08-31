@@ -56,10 +56,10 @@ The measured round counts are MP-SPDZ's own, which count one round per polling i
 
 \begin{table}[tbp]
     \caption{%
-        Cost of one decryption, timed phase only, converting from $\ints_{2^{63}}$ to $\ints_{2^{64}}$.
-        Openings are the protocol-level round complexity; rounds and data are measured by MP-SPDZ over the timed phase, under an emulated $1$~ms ping time and $1$~Gbit/sec bandwidth, as the median of five runs.
-        Communication is $251.7 (N-1)$ bytes in every row, being two openings of a $\ints_{2^{64}}$ share to each peer with its MAC check.
-        The $N = 16$ times are contended; see \cref{sec:benchmark-caveats}.%
+        Cost of one decryption, timed phase only, converting from $\ints_{2^{63}}$ to $\ints_{2^{64}}$, under an emulated $1$~ms ping time and $1$~Gbit/sec bandwidth, as the median of five runs.
+        Openings are the protocol-level round complexity, against three sequential openings and two further rounds of authenticity checks in \cite{CCS:ZZLP25}.
+        Communication is $251.7(N-1)$ bytes in every row.
+        Times are repeated from \cref{tab:benchmark-latency}; the $N = 16$ row is limited by the host, see \cref{sec:benchmark-caveats}.%
     }
     \label{tab:benchmark-online}
     \centering
@@ -70,14 +70,14 @@ The measured round counts are MP-SPDZ's own, which count one round per polling i
         Protocol & $N$ & $\beta$ & Openings & Rounds & Data/party & Time (ms) \\
         \midrule
         \multirow{3}{*}{$\Pi_\mathsf{ModConv1}$}
-            & $4$  & $2$ & $2$ & $10$ & $0.76$ kB & $6.73$ \\
-            & $8$  & $2$ & $2$ & $10$ & $1.76$ kB & $14.98$ \\
-            & $16$ & $2$ & $2$ & $10$ & $3.77$ kB & $99.99$ \\
+            & $4$  & $2$ & $2$ & $10$ & $0.76$ kB & $6.79$ \\
+            & $8$  & $2$ & $2$ & $10$ & $1.76$ kB & $13.68$ \\
+            & $16$ & $2$ & $2$ & $10$ & $3.77$ kB & $107.02$ \\
         \midrule
         \multirow{3}{*}{$\Pi_\mathsf{ModConv2}$}
-            & $4$  & $8$  & $2$ & $10$ & $0.76$ kB & $6.86$ \\
-            & $8$  & $16$ & $2$ & $10$ & $1.76$ kB & $14.65$ \\
-            & $16$ & $32$ & $2$ & $10$ & $3.77$ kB & $76.91$ \\
+            & $4$  & $8$  & $2$ & $10$ & $0.76$ kB & $6.84$ \\
+            & $8$  & $16$ & $2$ & $10$ & $1.76$ kB & $13.22$ \\
+            & $16$ & $32$ & $2$ & $10$ & $3.77$ kB & $96.64$ \\
         \bottomrule
     \end{tabular}
 \end{table}
@@ -186,8 +186,9 @@ The comparison in \cref{sec:benchmark-comparison} is therefore conservative in t
 \begin{table}[tbp]
     \caption{%
         Time (in ms) of one decryption, online phase, under emulated network conditions at $1$~Gbit/sec, following \cite[Table~2]{CCS:ZZLP25}.
-        Median of five runs.
-For comparison, \cite[Table~2]{CCS:ZZLP25} reports $8.48$, $10.09$ and $24.23$~ms at $1$~ms and $55.6$, $55.5$ and $57.0$~ms at $10$~ms, and its raw logs give $555.8$, $566.0$ and $811.8$~ms at $100$~ms, for $N = 4$, $8$ and $16$ respectively.%
+        Median of five runs, one thread per party; five threads makes no difference at a batch of one and is omitted.
+        The $1$ and $10$~ms rows of \cite{CCS:ZZLP25} are its Table~2, the $100$~ms row is computed from the raw logs published with its implementation.
+        Our $N = 16$ rows are limited by the host rather than the protocol; see \cref{sec:benchmark-caveats}.%
     }
     \label{tab:benchmark-latency}
     \centering
@@ -198,14 +199,19 @@ For comparison, \cite[Table~2]{CCS:ZZLP25} reports $8.48$, $10.09$ and $24.23$~m
         Protocol & Ping time & $4$ Parties & $8$ Parties & $16$ Parties \\
         \midrule
         \multirow{3}{*}{$\Pi_\mathsf{ModConv1}$}
-            & $1$ ms   & $6.73$   & $14.98$  & $99.99$ \\
-            & $10$ ms  & $61.20$  & $65.31$  & $126.35$ \\
-            & $100$ ms & $601.12$ & $604.06$ & $646.71$ \\
+            & $1$ ms & $6.79$ & $13.68$ & $107.02$ \\
+            & $10$ ms & $61.03$ & $63.10$ & $86.91$ \\
+            & $100$ ms & $601.05$ & $605.85$ & $639.69$ \\
         \midrule
         \multirow{3}{*}{$\Pi_\mathsf{ModConv2}$}
-            & $1$ ms   & $6.86$   & $14.65$  & $76.91$ \\
-            & $10$ ms  & $61.18$  & $66.81$  & $106.97$ \\
-            & $100$ ms & $601.94$ & $603.13$ & $628.82$ \\
+            & $1$ ms & $6.84$ & $13.22$ & $96.64$ \\
+            & $10$ ms & $61.10$ & $64.62$ & $85.43$ \\
+            & $100$ ms & $601.07$ & $604.49$ & $626.49$ \\
+        \midrule
+        \multirow{3}{*}{\cite{CCS:ZZLP25}}
+            & $1$ ms & $8.48$ & $10.09$ & $24.23$ \\
+            & $10$ ms & $55.62$ & $55.49$ & $56.98$ \\
+            & $100$ ms & $555.80$ & $566.00$ & $811.80$ \\
         \bottomrule
     \end{tabular}
 \end{table}
@@ -221,67 +227,39 @@ The property that decides this comparison is that \emph{our round complexity doe
 The batch is vectorized rather than looped, so a thousand decryptions issue the same two opening instructions as one; we measure $11$ rounds and $96$ bytes per decryption, unchanged from $1000$ to $10\,000$ decryptions per batch.
 A larger batch therefore dilutes a fixed network cost rather than paying it again, and that, rather than any local optimization, is what the figures below reflect.
 
-\Cref{tab:benchmark-throughput} reports the sweep over batch size and threads per party, each point the median of five runs.
-The two variables act differently.
-The batch is what the protocol buys: at a fixed thread count it gains between $50\%$ and $70\%$ from $1000$ to $10\,000$ decryptions, which is the fixed round cost being amortized and nothing else.
-Threads are what the host buys, and they are subject to it: the machine has $20$ cores for $N \times \text{threads}$ runnable threads, so five threads at $N = 4$ saturates it and the $B = 1000$ column, where there is too little work to amortize the extra tapes, actually falls back at five.
-The best point, $94\,139$ decryptions per second for $\Pi_\mathsf{ModConv1}$ and $92\,640$ for $\Pi_\mathsf{ModConv2}$, is about $1.46\times$ the $64\,319$ of \cite[Table~1]{CCS:ZZLP25} at the same party count and network condition.
+\Cref{tab:benchmark-throughput} sets our grid against theirs, and it does not resolve into a single ratio.
+The two implementations are limited by different things, and which one wins is decided by which limit binds.
 
-Their figures are quoted from \cite[Tables~1 and~3]{CCS:ZZLP25}: $64\,319$ decryptions per second at $N = 4$, $28\,504$ at $N = 8$ and $10\,915$ at $N = 16$.
-Aggregating the raw logs published with their implementation ourselves gives $73\,578$ at $N = 4$, some $14\%$ above what they claim, so we use their own figure throughout.
+At $1$~Gbit/sec and a $1$~ms ping we are ahead at $N = 4$, $70\,589$ against $64\,319$, and behind at $8$ and $16$ parties.
+As the ping time rises, that column collapses for us and barely moves for them: at $100$~ms and $N = 4$ they still achieve $30\,715$ where we manage $4\,238$.
+The reason is visible in \cref{tab:benchmark-latency} and in their own description of their harness.
+Our batch is one job whose eleven measured rounds are serial, so at $100$~ms it spends over a second waiting whatever the batch contains, while their published logs show ten jobs of $6500$ ciphertexts per party running concurrently, which hides the round trips behind each other.
+Vectorizing a batch removes the \emph{number} of rounds; it does not overlap them with anything, and pipelining does.
 
-Two differences in setting should be stated before the ratio is read, and both run against us.
-Their benchmarks are taken on a single \texttt{c7a.32xlarge} with $128$ vCPUs carrying all $N$ parties, so $32$ per party at $N = 4$, where ours has $20$ vCPUs and therefore five.
-And their throughput configuration is not a single stream: their published logs record ten jobs of $6500$ ciphertexts per party all completing between $0.764$ and $0.883$ seconds, a spread of $16\%$ where sequential execution would put the last at ten times the first.
-How many threads serve those ten jobs is not recoverable --- their command line exposes only protocol parameters, the count is read from a configuration file whose single published copy specifies a workload their own benchmark logs contradict, and \cite{CCS:ZZLP25} does not state it.
-What the paper does state is that ``the CPU is the bottleneck for $1$~ms and $10$~ms ping times'', so their figure at $1$~ms is a compute-saturated measurement of a $128$-vCPU machine.
-Our one-thread column is therefore not the comparable quantity, and the $55\,081$ there should not be read as a defeat; the $94\,139$ that does exceed them uses five threads per party on a host with $20$ vCPUs in total.
-Normalized by the machine, the two are $4\,707$ and $502$ decryptions per second per vCPU.
-It should equally be said that their implementation is written directly in Rust for this one task while ours is a program compiled to a general-purpose multi-party virtual machine.
-What the comparison isolates is not implementation quality but round structure, and that is a property of the protocols.
+At $100$~Mbit/sec the ordering reverses almost everywhere, by as much as $2.45\times$ at $N = 4$ and $1$~ms and $2.40\times$ at $N = 4$ and $100$~ms.
+Here it is bandwidth that binds rather than latency, and bandwidth is where the protocol shows: we measure $101$ bytes per decryption per party at $N = 4$, growing as $N-1$, against the $1.42$~kB per decryption implied by their own $100$~Mbit figures at the same party count.
+The gap narrows at $16$ parties, where our communication grows as $N(N-1)$ in aggregate and theirs more slowly, and the two are within five percent.
 
-\begin{table}[tbp]
-    \caption{%
-        Decryptions per second at $N = 4$ under an emulated $1$~ms ping time and $1$~Gbit/sec bandwidth, online phase, over a sweep of batch size and threads per party.
-        Median of five runs per point; every point decrypted correctly.
-        \cite[Table~1]{CCS:ZZLP25} reports $64\,319$ under the same conditions, on a host with $128$ vCPUs against this one's $20$, running ten pipelined jobs per party and, by its own account, bounded by the CPU at this ping time.%
-    }
-    \label{tab:benchmark-throughput}
-    \centering
-    \small
-    \setlength{\tabcolsep}{5pt}
-    \begin{tabular}{@{}llccc@{}}
-        \toprule
-        Protocol & Threads & Batch $1000$ & Batch $5000$ & Batch $10\,000$ \\
-        \midrule
-        \multirow{4}{*}{$\Pi_\mathsf{ModConv1}$}
-            & $1$ & $32\,628$ & $47\,008$ & $55\,081$ \\
-            & $2$ & $42\,582$ & $72\,384$ & $79\,300$ \\
-            & $4$ & $44\,225$ & $74\,892$ & $80\,813$ \\
-            & $5$ & $37\,286$ & $82\,089$ & $\bm{94\,139}$ \\
-        \midrule
-        \multirow{4}{*}{$\Pi_\mathsf{ModConv2}$}
-            & $1$ & $38\,593$ & $58\,180$ & $57\,658$ \\
-            & $2$ & $41\,974$ & $59\,079$ & $68\,675$ \\
-            & $4$ & $43\,285$ & $69\,375$ & $79\,105$ \\
-            & $5$ & $34\,062$ & $83\,369$ & $\bm{92\,640}$ \\
-        \bottomrule
-    \end{tabular}
-\end{table}
+Two things follow for the reading of these tables, and both are ours to concede.
+The first is that our $1$~Gbit high-ping cells are limited by the batch and not by the protocol: at $100$~ms the round cost is fixed per batch, so the batch of $3000$ used here --- chosen to fit the offline data on disk --- would improve roughly threefold at $10\,000$, and still not reach them, because what separates us there is pipelining.
+The second is that five threads per party helps only where the host is the constraint, at $1$~ms, and hurts everywhere else: our threading splits one batch across tapes that each open separately, taking the round count from eleven to fifty-five, which at $100$~ms costs far more than the arithmetic it parallelises.
+Their concurrency is of independent jobs and does not pay that.
+The winning thread count is given in each cell for that reason.
 
-Latency admits a cleaner comparison than throughput, because it is governed by round trips rather than by how fast a party computes, and it is where the two protocols can be set against each other rather than the two implementations.
-\cite[Table~2]{CCS:ZZLP25} gives $8.48$, $10.09$ and $24.23$~ms at $N = 4$, $8$ and $16$ under a $1$~ms ping time, and $55.6$, $55.5$ and $57.0$~ms under a $10$~ms one; their raw logs add $555.8$, $566.0$ and $811.8$~ms at $100$~ms.
-\Cref{tab:benchmark-latency} gives $6.73$, $14.98$ and $99.99$~ms, and $61.2$, $65.3$ and $126.3$~ms, and $601.1$, $604.1$ and $646.7$~ms, for $\Pi_\mathsf{ModConv1}$ under the same three.
-At $N = 4$ we are faster at every ping time, by $21\%$ at $1$~ms; at $N = 8$ we are slower by a tenth.
-At $N = 16$ and $100$~ms, where round trips dominate everything else, the ordering reverses decisively: $646.7$~ms against their $811.8$, and $628.8$ for $\Pi_\mathsf{ModConv2}$, a fifth faster.
-Their cost grows with the party count at high ping times while ours does not, which is what two openings against their three buys.
-The exception is our $N = 16$ column at $1$ and $10$~ms, which is host-limited rather than protocol-limited; \cref{sec:benchmark-caveats} says why, and those two cells should not be read as a comparison at all.
-As \cref{sec:benchmark-network} notes, our figures additionally carry a bandwidth cap that theirs do not.
+The honest summary is therefore not a ratio but a characterisation.
+Ours moves less data and needs fewer openings; theirs tolerates latency better because it pipelines.
+On a fast link with high latency they win, on a constrained link we win, and the protocol-level quantities --- two openings against three, $101$ bytes per party against $1.42$~kB --- are ours regardless of which implementation is measured.
+
+Latency admits a cleaner comparison than throughput, because it is governed by round trips rather than by how fast a party computes or how deeply it pipelines.
+\Cref{tab:benchmark-latency} gives ours beside theirs.
+At $N = 4$ and a $1$~ms ping we are the faster, $6.79$~ms against $8.48$, which is two openings against three showing directly.
+At $10$~ms we are behind by about a tenth at $N = 4$ and $8$, and at $100$~ms by a similar margin --- except at $16$ parties, where the ordering reverses and we measure $639.7$~ms against their $811.8$, a fifth faster, because their cost grows with the party count at high ping and ours does not.
+Our $16$-party figures at $1$ and $10$~ms are the exception in the other direction and are not a comparison at all: they are limited by our host, as \cref{sec:benchmark-caveats} records.
 
 \subsection{Caveats}
 \label{sec:benchmark-caveats}
 
-Two qualifications apply to the numbers above.
+Four qualifications apply to the numbers above.
 
 The first is that the preprocessing of $\Pi_\mathsf{ModConv2}$ takes each party's contribution through SPDZ2k's own authenticated $\Input$ rather than through the $\CheckedInput$ of \cref{step:modconv2-preproc:input,step:modconv2-preproc:range} and the consistency check of \cref{step:modconv2-preproc:cons-check};
 only the hot-one check of \cref{step:modconv2-preproc:hot-one} is performed.
@@ -293,17 +271,21 @@ This is what makes them online figures at all --- MP-SPDZ would otherwise genera
 It also means the online and preprocessing sections must be read together: nothing in \cref{sec:benchmark-comparison} accounts for the cost of producing that material, which \cref{tab:benchmark-preproc} gives separately.
 Every reported row was checked against the $96$ bytes per decryption that two openings of a $\ints_{2^{64}}$ share to $N-1$ peers must cost, which is the symptom by which a run that silently generated preprocessing can be told from one that did not; and against a plaintext computed in the clear, so that a batch which decrypted incorrectly can never be reported as a fast one.
 
-The third is that all $N$ parties share a single $20$-core host, so a configuration asking for $N \times \text{threads}$ runnable threads contends with itself.
-\Cref{tab:benchmark-throughput} is near-monotone under a median of five runs and its shape can be relied upon, but the $N = 16$ rows of \cref{tab:benchmark-online,tab:benchmark-latency} cannot: at a $1$~ms ping time their five repetitions span $60$--$135$~ms, a factor of two, against a spread below $2\%$ at $N = 4$.
-The $N = 16$ figures should be read as upper bounds set by the host rather than as measurements of the protocol, and they are the reason the $N = 16$ column does not decrease as the ping time falls.
-A deployment with one host per party, which is the setting the protocol is meant for, would not have this behaviour.
+The third is that all $N$ parties share a single $20$-core host, against the $128$ vCPUs on which \cite{CCS:ZZLP25} runs the same number of parties.
+This is what limits our $16$-party latency at $1$ and $10$~ms: at a $1$~ms ping its five repetitions span a factor of two where $N = 4$ spans under two percent, and the column does not fall as the ping time falls, which a protocol-limited measurement would.
+Those cells are upper bounds set by the machine, and a deployment with one host per party --- the setting the protocol is meant for --- would not have this behaviour.
+
+The fourth is that we report a single batch rather than a pipeline.
+Our throughput figures come from one batch of $3000$ decryptions whose eleven rounds are serial, where \cite{CCS:ZZLP25} runs ten concurrent jobs per party and therefore overlaps its round trips.
+That is a property of our harness and not of $\Pi_\mathsf{ModConv1}$ or $\Pi_\mathsf{ModConv2}$, which say nothing about how many decryptions may be in flight, and it accounts for the whole of the $1$~Gbit high-ping column.
+We have not implemented pipelining and make no claim about what it would give.
 
 \claude{%
-Every table above is filled from one run of the rewritten harness, with \texttt{tc} confirmed attached and its round-trip time checked against the nominal ping on every row, five repetitions per point, and zero decryption errors throughout.
-Their figures are now quoted from the paper rather than recomputed: their Tables~1--3 for the online phase, Table~5 and the $2478$ multiplications for the preprocessing.
-My own aggregation of their raw logs had given $73\,578$ where they claim $64\,319$, $14\%$ in their favour, so quoting them is both safer and better for us --- the ratio is $1.46\times$, not the $1.28\times$ an earlier draft said.
-Three things remain.
-(i) \Cref{tab:benchmark-preproc-cmp}'s ``excl.\ generation'' times are measured on my machine, unshaped. Their byte and round columns are network-independent and stand, but re-run the \texttt{preproc} phase with \texttt{tc} attached before quoting the $0.0014$ and $0.028$; the harness now writes both conventions to \texttt{preproc.csv}.
-(ii) The $N = 16$ latency cells at $1$ and $10$~ms are host-limited: five repetitions spanning $60$--$135$~ms against under $2\%$ at $N = 4$. They are the only cells where we look much worse than \cite{CCS:ZZLP25} and the cause is our hardware, not the protocol. Re-run them on a quiet host, or drop the column and say why.
-(iii) Name our machine. They name a \texttt{c7a.32xlarge}, $128$ vCPUs, all parties on it; ours has $20$ and is unnamed. The section now states this because the throughput ratio is meaningless without it. I could not determine their thread count for the online phase: it is absent from the paper, absent from the command line, and read from a config file whose published copy specifies \texttt{ctxt\_per\_job = 100} where the benchmark logs record $6500$. The text therefore rests on their own sentence that the CPU is the bottleneck at this ping time, which is enough and is quotable.
+Every table is now filled from one run of the final harness: \texttt{tc} attached and its round-trip time checked against the nominal ping on every row, five repetitions per cell, both thread settings, and zero decryption errors across all 72 grid cells and all 36 latency cells.
+The result is not the clean win an earlier draft claimed, and \cref{sec:benchmark-comparison} now says so: we win at $100$~Mbit almost everywhere and lose the $1$~Gbit high-ping column badly, because they pipeline ten jobs and we run one batch.
+Four things to decide before this goes out.
+(i) The $1$~Gbit high-ping cells used a batch of $3000$, forced by disk. Re-running the grid at $10\,000$ should improve them about threefold and is the single cheapest thing left; it will not close the gap, but it removes an artefact of our own setup from a column we lose.
+(ii) The $N = 16$ latency cells at $1$ and $10$~ms are host-limited and are the worst numbers in the paper. Re-run those two on a quiet larger machine, or drop the column and say why.
+(iii) Consider whether to implement pipelining. It is the whole of the $1$~Gbit high-ping gap, it is a harness property rather than a protocol one, and \cref{sec:benchmark-caveats} currently concedes it without measuring it.
+(iv) Name our machine; theirs is a \texttt{c7a.32xlarge} with $128$ vCPUs against our $20$, and the throughput table is not interpretable without both.
 }
