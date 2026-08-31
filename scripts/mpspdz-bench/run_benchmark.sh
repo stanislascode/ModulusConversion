@@ -44,6 +44,13 @@ fi
 
 PARTIES=${PARTIES:-"4 8 16"}
 THREAD_LIST=${THREAD_LIST:-"1 5"}
+
+# DEFER=1 opens both values unchecked and covers them with one batched
+# check_point() before the timer stops, halving the MAC checks: 10 of MP-SPDZ's
+# rounds become 7, six round trips become four. Needs
+# patches/mpspdz-defer-check.patch applied to MP-SPDZ, and only takes effect on
+# a single tape, so it is run with THREADS=1 alone.
+DEFER_LIST=${DEFER_LIST:-"0 1"}
 REPS=${REPS:-5}
 
 # Their Table 2 gives 1 and 10 ms only; 100 ms is kept because their raw logs
@@ -293,21 +300,21 @@ repeat_online() {
 
 # cell <csv> <protocol> <parties> <beta> <ping> <bw> <batch> <threads>
 cell() {
-    local csv=$1 name=$2 n=$3 beta=$4 ping=$5 bw=$6 batch=$7 t=$8
+    local csv=$1 name=$2 n=$3 beta=$4 ping=$5 bw=$6 batch=$7 t=$8 d=${9:-0}
     if [ "$name" = modconv1 ]; then
-        repeat_online "$REPS" "$n" modconv1_online 2 "$batch" "$LWE_N" "$t"
+        repeat_online "$REPS" "$n" modconv1_online 2 "$batch" "$LWE_N" "$t" "$d"
     else
-        repeat_online "$REPS" "$n" modconv2_online "$n" "$beta" "$batch" "$LWE_N" "$t"
+        repeat_online "$REPS" "$n" modconv2_online "$n" "$beta" "$batch" "$LWE_N" "$t" "$d"
     fi
     if [ "$(awk "BEGIN{print ($MED_S > 0)}")" = 1 ]; then
         CELL_TP=$(awk "BEGIN{printf \"%.1f\", $batch/$MED_S}")
         CELL_BPD=$(awk "BEGIN{printf \"%.1f\", $LAST_MB*1048576/$batch}")
         CELL_MS=$(awk "BEGIN{printf \"%.4f\", $MED_S*1000}")
     else CELL_TP=0; CELL_BPD=0; CELL_MS=0; fi
-    echo "$name,$n,$beta,$ping,$bw,$EMU,$batch,$t,$REPS,$CELL_MS,$CELL_TP,$CELL_BPD,$LAST_ROUNDS,$ERR_TOTAL,\"$RAW\"" >> "$csv"
+    echo "$name,$n,$beta,$ping,$bw,$EMU,$batch,$t,$d,$REPS,$CELL_MS,$CELL_TP,$CELL_BPD,$LAST_ROUNDS,$ERR_TOTAL,\"$RAW\"" >> "$csv"
 }
 
-HEADER="protocol,parties,beta,ping_ms,bandwidth,net_emulated,batch,threads,reps,time_ms_median,throughput_dec_per_sec,bytes_per_dec,rounds,mismatches,raw_times_s"
+HEADER="protocol,parties,beta,ping_ms,bandwidth,net_emulated,batch,threads,defer,reps,time_ms_median,throughput_dec_per_sec,bytes_per_dec,rounds,mismatches,raw_times_s"
 
 # ------------------------------------------------------------------ check
 if [[ " $PHASES " == *" check "* ]]; then
@@ -332,10 +339,13 @@ if [[ " $PHASES " == *" latency "* ]]; then
             B2=$(beta2_of "$N")
             ensure_prep "$N" "$(inputs_needed 1 "$B2")"
             for T in $THREAD_LIST; do
-                cell "$CSV" modconv1 "$N" 2 "$PING" 1gbit 1 "$T"
-                echo "    latency modconv1 N=$N ${PING}ms T=$T: $CELL_MS ms (mismatches $ERR_TOTAL)"
-                cell "$CSV" modconv2 "$N" "$B2" "$PING" 1gbit 1 "$T"
-                echo "    latency modconv2 N=$N ${PING}ms T=$T: $CELL_MS ms (mismatches $ERR_TOTAL)"
+                for D in $DEFER_LIST; do
+                    if [ "$D" = 1 ] && [ "$T" != 1 ]; then continue; fi
+                    cell "$CSV" modconv1 "$N" 2 "$PING" 1gbit 1 "$T" "$D"
+                    echo "    latency modconv1 N=$N ${PING}ms T=$T D=$D: $CELL_MS ms (mismatches $ERR_TOTAL)"
+                    cell "$CSV" modconv2 "$N" "$B2" "$PING" 1gbit 1 "$T" "$D"
+                    echo "    latency modconv2 N=$N ${PING}ms T=$T D=$D: $CELL_MS ms (mismatches $ERR_TOTAL)"
+                done
             done
         done
     done
@@ -357,10 +367,13 @@ if [[ " $PHASES " == *" grid "* ]]; then
             for N in $PARTIES; do
                 B2=$(beta2_of "$N")
                 for T in $THREAD_LIST; do
-                    cell "$CSV" modconv1 "$N" 2 "$PING" "$BW" "$GRID_BATCH" "$T"
-                    echo "    modconv1 N=$N $BW ${PING}ms T=$T: $CELL_TP dec/s, $CELL_BPD B/dec (mismatches $ERR_TOTAL)"
-                    cell "$CSV" modconv2 "$N" "$B2" "$PING" "$BW" "$GRID_BATCH" "$T"
-                    echo "    modconv2 N=$N $BW ${PING}ms T=$T: $CELL_TP dec/s, $CELL_BPD B/dec (mismatches $ERR_TOTAL)"
+                    for D in $DEFER_LIST; do
+                        if [ "$D" = 1 ] && [ "$T" != 1 ]; then continue; fi
+                        cell "$CSV" modconv1 "$N" 2 "$PING" "$BW" "$GRID_BATCH" "$T" "$D"
+                        echo "    modconv1 N=$N $BW ${PING}ms T=$T D=$D: $CELL_TP dec/s, $CELL_BPD B/dec (mismatches $ERR_TOTAL)"
+                        cell "$CSV" modconv2 "$N" "$B2" "$PING" "$BW" "$GRID_BATCH" "$T" "$D"
+                        echo "    modconv2 N=$N $BW ${PING}ms T=$T D=$D: $CELL_TP dec/s, $CELL_BPD B/dec (mismatches $ERR_TOTAL)"
+                    done
                 done
             done
         done
@@ -375,9 +388,9 @@ if [[ " $PHASES " == *" sweep "* ]]; then
     for B in $BATCHES; do
         ensure_prep "$SWEEP_N" "$(inputs_needed "$B" "$B2")"
         for T in $THREAD_LIST; do
-            cell "$CSV" modconv1 "$SWEEP_N" 2 1 1gbit "$B" "$T"
+            cell "$CSV" modconv1 "$SWEEP_N" 2 1 1gbit "$B" "$T" 0
             echo "    sweep modconv1 B=$B T=$T: $CELL_TP dec/s"
-            cell "$CSV" modconv2 "$SWEEP_N" "$B2" 1 1gbit "$B" "$T"
+            cell "$CSV" modconv2 "$SWEEP_N" "$B2" 1 1gbit "$B" "$T" 0
             echo "    sweep modconv2 B=$B T=$T: $CELL_TP dec/s"
         done
     done

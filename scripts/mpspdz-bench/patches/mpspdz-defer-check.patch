@@ -1,0 +1,20 @@
+--- a/Processor/Processor.hpp
++++ b/Processor/Processor.hpp
+@@ -477,7 +477,7 @@
+ template <class T>
+ void SubProcessor<T>::POpen(const Instruction& inst)
+ {
+-  if (inst.get_n() or BaseMachine::s().nthreads > 0)
++  if (inst.get_n() or BaseMachine::s().nthreads > 1)
+     check();
+   auto& reg = inst.get_start();
+   int size = inst.get_size();
+@@ -491,7 +491,7 @@
+   for (auto it = reg.begin(); it < reg.end(); it += 2)
+     for (int i = 0; i < size; i++)
+       C[*it + i] = MC.finalize_open();
+-  if (inst.get_n() or BaseMachine::s().nthreads > 0)
++  if (inst.get_n() or BaseMachine::s().nthreads > 1)
+     check();
+ 
+   if (Proc != 0)

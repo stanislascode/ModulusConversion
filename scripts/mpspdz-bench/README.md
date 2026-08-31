@@ -237,6 +237,41 @@ bytes per decryption at `N = 4`, scaling as `N - 1`, and 11 rounds regardless
 of batch size. Under threading the byte figure is party 0's share across tapes
 and is not comparable; compare it only at `threads=1`.
 
+### Halving the MAC checks (`DEFER=1`)
+
+The two openings are **dependent**: the index selecting the correction comes
+from the first opened value. `SubProcessor::POpen` checks an opened value's MAC
+both before and after every opening, so a dependent pair pays two full checks —
+six round trips, against the 5.56 Fhenix spends.
+
+`DEFER=1` opens both without checking and covers them with a single
+`check_point()` before the timer stops. Measured, `N = 4`, batch 1000, ModConv1:
+
+| | MP-SPDZ rounds | data/party | correctness |
+|---|---|---|---|
+| two checks (default) | 10 | 0.096312 MB | 0 mismatches |
+| one batched check | **7** | 0.096252 MB | 0 mismatches |
+
+Six round trips become four, below their 5.56, with the check inside the timed
+region rather than deferred past it.
+
+**It requires `patches/mpspdz-defer-check.patch`.** `reveal(check=False)` sets a
+per-opening flag that the VM ignores, because `POpen` also checks whenever
+`nthreads > 0` and the schedule file reports 1 even for a single-tape program.
+The patch changes that to `> 1`, preserving the conservative behaviour where it
+is needed. Without the patch `DEFER=1` runs and is correct but changes nothing;
+compare the round counts of a `DEFER=0` and a `DEFER=1` row to tell.
+
+**It works on a single tape only**, so the harness pairs it with `THREADS=1`
+and skips the other combinations.
+
+Why it is sound: nothing leaves the computation before the batched check, a
+tampered opening selects a wrong correction and fails that check, `y` is masked
+by a uniform `m` so tampering reveals no more than the honest value did, and the
+check fails on a MAC mismatch independently of the plaintext, so there is no
+selective failure. `patches/PATCH.md` states the argument in full — read it
+against the protocol as specified before relying on the figures.
+
 ### A round reduction that does not work, and why
 
 The two openings are **dependent**: the index selecting the correction comes

@@ -2,7 +2,7 @@ import os
 import random
 
 from Compiler.types import sint, cint, regint, Array
-from Compiler.library import print_ln, multithread
+from Compiler.library import print_ln, multithread, check_point
 
 K_Q = 63
 K_T = 64
@@ -53,7 +53,7 @@ def read_vec_from(party, size):
 
 
 def warm_up():
-    return sint(0).reveal()
+    return sint(0).reveal(check=False)
 
 
 def warm_up_threads(*args, **kwargs):
@@ -214,22 +214,44 @@ def to_array(vec, size):
     return a
 
 
-def decrypt_batch(sk_arr, mu_arr, m_arr, u_arrs, beta, batch, c_bits, threads):
+def _decrypt_body(sk_arr, mu_arr, m_arr, u_arrs, beta, n_u, out, base, size,
+                  c_bits, defer):
+    acc = None
+    for j in range(len(sk_arr)):
+        term = sk_arr[j] * cint(regint.get_random(c_bits, size=size))
+        acc = term if acc is None else acc + term
+    x = acc + mu_arr.get_vector(base, size) * Q
+    # The first opening is masked by m, and nothing leaves the computation
+    # before the second is checked, so its MAC check may be deferred: a
+    # tampered value selects a wrong correction and the final check -- which
+    # covers every value opened since the last check -- fails. Needs the POpen
+    # patch and a single tape, MP-SPDZ checking unconditionally once a program
+    # has threads.
+    y = (x + m_arr.get_vector(base, size)).reveal(check=not defer) & (Q - 1)
+    alpha = y >> (K_Q - n_u)
+    u = u_arrs[0].get_vector(base, size) * (alpha == 0)
+    for i in range(1, beta):
+        u = u + u_arrs[i].get_vector(base, size) * (alpha == i)
+    out.assign_vector((x - (y - u)).reveal(check=not defer), base=base)
+
+
+def decrypt_batch(sk_arr, mu_arr, m_arr, u_arrs, beta, batch, c_bits, threads,
+                  defer=False):
     n_u = log2_exact(beta)
     out = Array(batch, cint)
 
+    if threads <= 1:
+        _decrypt_body(sk_arr, mu_arr, m_arr, u_arrs, beta, n_u, out, 0, batch,
+                      c_bits, defer)
+        if defer:
+            # one batched check covering both openings, inside the timer, and
+            # before any value leaves the computation
+            check_point()
+        return out
+
     @multithread(threads, batch)
     def _(base, size):
-        acc = None
-        for j in range(len(sk_arr)):
-            term = sk_arr[j] * cint(regint.get_random(c_bits, size=size))
-            acc = term if acc is None else acc + term
-        x = acc + mu_arr.get_vector(base, size) * Q
-        y = (x + m_arr.get_vector(base, size)).reveal() & (Q - 1)
-        alpha = y >> (K_Q - n_u)
-        u = u_arrs[0].get_vector(base, size) * (alpha == 0)
-        for i in range(1, beta):
-            u = u + u_arrs[i].get_vector(base, size) * (alpha == i)
-        out.assign_vector((x - (y - u)).reveal(), base=base)
+        _decrypt_body(sk_arr, mu_arr, m_arr, u_arrs, beta, n_u, out, base,
+                      size, c_bits, False)
 
     return out
