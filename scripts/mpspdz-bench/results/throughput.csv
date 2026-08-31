@@ -1,0 +1,3 @@
+protocol,parties,beta,ping_ms,bandwidth,net_emulated,batch,threads,reps,time_s_median,throughput_dec_per_sec,bytes_per_dec,rounds,mismatches
+modconv1,4,2,1,1gbit,yes,10000,5,5,0.106226,94138.9,101.0,55,0
+modconv2,4,8,1,1gbit,yes,10000,5,5,0.107945,92639.8,101.0,55,0
