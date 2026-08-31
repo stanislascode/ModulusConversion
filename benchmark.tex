@@ -118,39 +118,47 @@ Batching one thousand conversions into a single program instead gives $37.4$~s, 
 
 Both figures include the generation of the correlated randomness the protocols consume: the phase runs with MP-SPDZ's live preprocessing, so the oblivious-transfer traffic that produces its random bits and Beaver triples is inside the timer.
 That is the end-to-end cost, but it is not the convention of \cite[Table~5]{CCS:ZZLP25}, which reports its preprocessing explicitly \emph{ignoring triple and random-bit generation}.
-\Cref{tab:benchmark-preproc-cmp} therefore reports ours both ways, the second being the row to set against theirs.
+\Cref{tab:benchmark-preproc-cmp} therefore separates the two, and prices the excluded part so that the totals can be compared at all.
 
 \begin{table}[tbp]
     \caption{%
-        Preprocessing for one thousand decryptions, $N = 2$, $1$~ms ping time, $1$~Gbit/sec bandwidth.
-        The second block adopts the convention of \cite[Table~5]{CCS:ZZLP25}, ignoring triple and random-bit generation, and is the one to compare with it.
-        Multiplication counts are per decryption, exact, and read off the compiler; \cite{CCS:ZZLP25} states its own as $d(2^b-b-1) + (2^{d+1}-d-2) = 2478$ with $b = d = 8$.%
+        Preprocessing per decryption, $N = 2$.
+        Primitive counts are exact: ours read off the MP-SPDZ compiler, theirs stated in \cite{CCS:ZZLP25} as $d(2^b-b-1) + (2^{d+1}-d-2)$ with $b = d = 8$.
+        \emph{Overhead} is what the protocol costs on top of those primitives, measured at $1$~ms ping time and $1$~Gbit/sec bandwidth and divided by one thousand; it is the quantity \cite[Table~5]{CCS:ZZLP25} reports, ``ignoring triple and random-bit generation''.
+        \emph{Primitives} prices the counts at the $14.9$~kbit per triple of \cite{CCS:ZZLP25}'s own citation of Multipars; the value in brackets prices $\Pi_\mathsf{ModConv1}$'s bits at the $20.2$~kB we measure for a SPDZ2k random bit instead.%
     }
     \label{tab:benchmark-preproc-cmp}
     \centering
     \small
-    \begin{tabular}{@{}llccc@{}}
+    \setlength{\tabcolsep}{4pt}
+    \begin{tabular}{@{}lcccccc@{}}
         \toprule
-        & Protocol & Mults/dec & Time (s) & Data (MB) \\
+        & \multicolumn{2}{c}{Primitives/dec} & \multicolumn{3}{c}{MB per decryption} \\
+        \cmidrule(lr){2-3}\cmidrule(lr){4-6}
+        Protocol & Mults & Rand.\ bits & Primitives & Overhead & Total \\
         \midrule
-        \multirow{2}{*}{\emph{incl.\ generation}}
-          & $\Pi_\mathsf{ModConv1}$ & $0$  & $37.4$  & $1344$ \\
-          & $\Pi_\mathsf{ModConv2}$ & $16$ & $6.37$  & $273$ \\
-        \midrule
-        \multirow{3}{*}{\emph{excl.\ generation}}
-          & \cite[Table~5]{CCS:ZZLP25} & $2478$ & $1.35$ & $79.29$ \\
-          & $\Pi_\mathsf{ModConv1}$ & $0$  & $\bm{0.0014}$ & $\bm{0}$ \\
-          & $\Pi_\mathsf{ModConv2}$ & $16$ & $\bm{0.028}$  & $\bm{1.55}$ \\
+        \cite{CCS:ZZLP25}        & $2478$ & ${\approx}64$ & $4.51$          & $0.079$   & $4.59$ \\
+        $\Pi_\mathsf{ModConv1}$  & $0$    & $63$          & $0.11$ $[1.24]$ & $0$       & $0.11$ $[1.24]$ \\
+        $\Pi_\mathsf{ModConv2}$  & $16$   & $0$           & $0.029$         & $0.0016$  & $\bm{0.031}$ \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-Read at their convention, the gap is large and it is structural rather than incidental.
-$\Pi_\mathsf{ModConv1}$ issues no secure multiplication at all, and once its random bits are supplied its preparation is a local linear combination: we measure zero rounds and zero bytes, against their $79.29$~MB.
-$\Pi_\mathsf{ModConv2}$ does communicate, but only for the $(N-1)\beta^2 = 16$ multiplications of its convolution --- against the $2478$ their gate preprocessing requires per decryption --- and comes out at $1.55$~MB and three rounds, a factor of $51$ below.
-The same ratio governs the cost they exclude: they estimate their own triple generation at approximately $4.5$~MB per decryption, following Multipars' amortized $14.9$~kbit per triple, where $\Pi_\mathsf{ModConv2}$'s sixteen triples cost $0.03$~MB at the same rate.
+Two things should be read off \cref{tab:benchmark-preproc-cmp}, and a third should not.
 
-It is worth being precise about what the first block measures, because it is not our protocol.
+The robust comparison is $\Pi_\mathsf{ModConv2}$ against \cite{CCS:ZZLP25}: both spend their preprocessing on secure multiplications, so the ratio is one of counts at a common price and does not depend on how triples are produced.
+Sixteen against $2478$ is a factor of $155$, and the measured overhead agrees, $1.55$~MB against $79.29$ per thousand.
+Their own estimate of what they exclude, ``approximately $4.5$~MB of communication per decryption'', is reproduced by the first column and is $145$ times $\Pi_\mathsf{ModConv2}$'s $0.031$.
+
+The overhead column on its own is not the result, and for $\Pi_\mathsf{ModConv1}$ it is actively misleading.
+Once its random bits are supplied there is nothing left to do --- the corrections are a local linear combination, and we measure zero rounds and zero bytes --- so reading $0$ against $79.29$~MB would be reading the consequence of having excluded the only thing the protocol does.
+What the zero says precisely is that $\Pi_\mathsf{ModConv1}$'s preprocessing \emph{is} a request for $63$ random bits, with no structure on top; whether that is cheap is entirely the question of what a random bit costs.
+
+That price is the third thing, and it is the weak point of the comparison rather than a strength.
+We measure $20.2$~kB for an authenticated random bit in SPDZ2k, which realizes it through square pairs and hence through triples; at that price $\Pi_\mathsf{ModConv1}$ is a factor of $3.7$ below \cite{CCS:ZZLP25} rather than the $40$ it would be at the triple price they themselves quote.
+A tenfold spread on an implementation choice is not a claim about protocols, and we do not make one: the durable statement about $\Pi_\mathsf{ModConv1}$ is that it issues no secure multiplication at all, which \cref{tab:modconv} records and no measurement can move.
+
+The same caution applies to \cref{tab:benchmark-preproc}, whose figures include the generation and are therefore dominated by it.
 Generating $63\,000$ shared random bits in SPDZ2k and doing nothing else costs $1272.76$~MB; the complete preprocessing of $\Pi_\mathsf{ModConv1}$ for the same one thousand conversions costs $1344$~MB.
 The protocol's own contribution --- the corrections, the one-hot vector and the linear combinations --- is thus under $6\%$, and the rest is the price SPDZ2k charges for an authenticated random bit, about $20.2$~kB each.
 Any protocol requiring $63$ such bits per conversion would pay the same, and a bespoke implementation would not pay it at all.
