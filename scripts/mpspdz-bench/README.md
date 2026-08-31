@@ -366,6 +366,29 @@ The `raw_times_s` column exists because the sweep surface is not monotone on a
 shared host. If the spread within a point approaches the gap between points,
 raise `REPS` rather than reporting the difference.
 
+One display artifact to expect rather than debug: MP-SPDZ occasionally reports
+`Time1 = ... (0 MB, 0 rounds)` for party 0, which surfaces as `0.0` in
+`bytes_per_dec` and `0` in `rounds`. The timing and `mismatches` for that run
+are still valid; it is a quirk of which party the per-thread accounting is
+attributed to, not a failed measurement. It is another reason to read the
+`rounds` column across a whole sweep rather than from one cell.
+
+## Ordering, and why the phases run cold first
+
+`latency` runs before `throughput`, which runs before `preproc`, regardless of
+the order named in `PHASES`. This is not arbitrary: the throughput sweep is by
+far the heaviest phase, and the latency measurement is the one made entirely of
+network round-trips, so measuring latency after throughput reads the host's
+recovery rather than the link. On one run that produced a 14.5 ms loopback RTT
+under a nominal 1 ms.
+
+`net()` additionally waits for every `spdz2k-party.x` to exit before it
+measures, and then checks the RTT against the nominal ping rather than merely
+printing it (`SETTLE_S` tunes the extra pause, default 3 s). Outside a
+tolerance of `max(1 ms, 50%)` the run stops rather than write rows carrying a
+ping label they did not experience; `ALLOW_BAD_RTT=1` overrides it and marks
+those rows `net_emulated=degraded`.
+
 ## Network emulation
 
 The grid is Fhenix's: ping {1, 10, 100} ms crossed with 1 Gbit/s, applied

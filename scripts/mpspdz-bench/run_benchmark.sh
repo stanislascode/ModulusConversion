@@ -110,7 +110,20 @@ rtt_now() {
 # loaded host inflates it: a stale set of parties still shutting down produced
 # 14.5 ms under a nominal 1 ms. A row taken then would carry a ping label it did
 # not experience, which is the one thing this harness exists to prevent.
+# Wait for a previous phase's parties to actually exit. The throughput sweep
+# leaves up to N processes tearing down, and ping measures how long the kernel
+# takes to answer, so measuring straight after it reads the load, not the link.
+settle() {
+    local i
+    for ((i = 0; i < 60; i++)); do
+        pgrep -f spdz2k-party.x >/dev/null 2>&1 || break
+        sleep 1
+    done
+    sleep "${SETTLE_S:-3}"
+}
+
 net() {
+    settle
     [ "$HAVE_TC" -eq 1 ] || { EMU=no; return 0; }
     $TC qdisc replace dev lo root netem delay "$(awk "BEGIN{print $1/2}")ms" rate "$2"
     if ! $TC qdisc show dev lo | grep -q netem; then
@@ -168,29 +181,23 @@ inputs_needed() {
 }
 
 # ------------------------------------------------------------------ runners
-# run_online <parties> <src> <args...> -> RUN_S RUN_MB RUN_ROUNDS RUN_ERR
-run_online() {
-    local n=$1 src=$2; shift 2
-    local prog="$src" a
-    for a in "$@"; do prog="$prog-$a"; done
-    local log="$RESULTS/$prog-N$n.log"
-    ./compile.py -R 64 "$src" "$@" > "$RESULTS/$prog-N$n-compile.log" 2>&1
-    if ! Scripts/spdz2k.sh -N "$n" -d -F "$prog" > "$log" 2>&1; then
-        echo "  RUN FAILED, see $log" >&2
-        RUN_S=0; RUN_MB=0; RUN_ROUNDS=0; RUN_ERR=-1
-        return
-    fi
-    eval "$(python3 "$HERE/parse_run.py" "$log")"
+# compile_prog <src> <args...> -> PROG
+# The program name carries every argument: compiling one name and running
+# another silently benchmarked a stale program once already. Compilation also
+# rewrites Player-Data/Input-P0-0, so a program is compiled immediately before
+# it is run and never while another one is pending.
+compile_prog() {
+    local src=$1; shift
+    PROG="$src"; local a
+    for a in "$@"; do PROG="$PROG-$a"; done
+    ./compile.py -R 64 "$src" "$@" > "$RESULTS/$PROG-compile.log" 2>&1
 }
 
-# run_preproc <parties> <src> <args...> -- pool-sized, not file-fed
-run_preproc() {
-    local n=$1 src=$2; shift 2
-    local prog="$src" a
-    for a in "$@"; do prog="$prog-$a"; done
+# run_prog <parties> <prog> [-F|-b N] -> RUN_S RUN_MB RUN_ROUNDS RUN_ERR
+run_prog() {
+    local n=$1 prog=$2; shift 2
     local log="$RESULTS/$prog-N$n.log"
-    ./compile.py -R 64 "$src" "$@" > "$RESULTS/$prog-N$n-compile.log" 2>&1
-    if ! Scripts/spdz2k.sh -N "$n" -d -b "$PREP_BATCH" "$prog" > "$log" 2>&1; then
+    if ! Scripts/spdz2k.sh -N "$n" -d "$@" "$prog" > "$log" 2>&1; then
         echo "  RUN FAILED, see $log" >&2
         RUN_S=0; RUN_MB=0; RUN_ROUNDS=0; RUN_ERR=-1
         return
@@ -204,12 +211,15 @@ beta2_of() { local b=1; while [ "$b" -lt $(($1 + 1)) ]; do b=$((b * 2)); done; e
 
 # repeat_online <reps> <parties> <src> <args...>
 #   -> MED_S (median time), LAST_MB, LAST_ROUNDS, ERR_TOTAL, RAW (all times)
+# Compiles once and runs `reps` times: the repetitions exist to average out host
+# noise, and recompiling between them only adds noise of its own.
 repeat_online() {
-    local reps=$1; shift
+    local reps=$1 n=$2; shift 2
+    compile_prog "$@"
     local times=() i
     ERR_TOTAL=0
     for ((i = 0; i < reps; i++)); do
-        run_online "$@"
+        run_prog "$n" "$PROG" -F
         times+=("$RUN_S")
         LAST_MB=$RUN_MB; LAST_ROUNDS=$RUN_ROUNDS
         ERR_TOTAL=$((ERR_TOTAL + RUN_ERR))
@@ -228,6 +238,28 @@ if [[ " $PHASES " == *" check "* ]]; then
     exit 0
 fi
 
+# ------------------------------------------------------------------ latency
+# One decryption at a time, across the ping x parties grid. Threads are pinned
+# to 1: at batch=1 there is nothing to split and an extra tape only adds a tape.
+if [[ " $PHASES " == *" latency "* ]]; then
+    CSV2="$RESULTS/latency.csv"
+    echo "protocol,parties,beta,ping_ms,bandwidth,net_emulated,reps,latency_ms_median,rounds,bytes_per_dec,mismatches,raw_times_s" > "$CSV2"
+    for PING in $PINGS; do
+        net "$PING" 1gbit
+        for N in $PARTIES; do
+            B2=$(beta2_of "$N")
+            ensure_prep "$N" "$(inputs_needed 1 "$B2")"
+            repeat_online "$REPS" "$N" modconv1_online 2 1 "$LWE_N" 1
+            BPD=$(awk "BEGIN{printf \"%.1f\", $LAST_MB*1048576}")
+            echo "modconv1,$N,2,$PING,1gbit,$EMU,$REPS,$(awk "BEGIN{printf \"%.4f\", $MED_S*1000}"),$LAST_ROUNDS,$BPD,$ERR_TOTAL,\"$RAW\"" >> "$CSV2"
+            repeat_online "$REPS" "$N" modconv2_online "$N" "$B2" 1 "$LWE_N" 1
+            BPD=$(awk "BEGIN{printf \"%.1f\", $LAST_MB*1048576}")
+            echo "modconv2,$N,$B2,$PING,1gbit,$EMU,$REPS,$(awk "BEGIN{printf \"%.4f\", $MED_S*1000}"),$LAST_ROUNDS,$BPD,$ERR_TOTAL,\"$RAW\"" >> "$CSV2"
+            echo "=== latency N=$N ping=${PING}ms done ==="
+        done
+    done
+fi
+
 # ------------------------------------------------------------------ throughput
 # Sweeps threads x batch and keeps the best median. Both are reported, because
 # a throughput figure without them is not reproducible.
@@ -240,11 +272,22 @@ if [[ " $PHASES " == *" throughput "* ]]; then
     B2=$(beta2_of 4)
     echo "    sweeping threads {$THREAD_LIST} x batch {$BATCHES}, $REPS reps each"
 
+    # One generation at the largest size the whole sweep needs. Sizing it per
+    # batch instead regenerates from scratch each time the batch grows, which
+    # cost five generations where one does.
+    MAXNEED=0
+    for B in $BATCHES; do
+        for BE in 2 "$B2"; do
+            NEED=$(inputs_needed "$B" "$BE")
+            [ "$NEED" -gt "$MAXNEED" ] && MAXNEED=$NEED
+        done
+    done
+    ensure_prep 4 "$MAXNEED"
+
     for p in 1 2; do
         if [ "$p" = 1 ]; then NAME=modconv1; BETA=2; else NAME=modconv2; BETA=$B2; fi
         BEST_TP=0; BEST_B=0; BEST_T=0; BEST_MB=0; BEST_R=0; BEST_E=0; BEST_S=0
         for B in $BATCHES; do
-            ensure_prep 4 "$(inputs_needed "$B" "$BETA")"
             for T in $THREAD_LIST; do
                 if [ "$p" = 1 ]; then
                     repeat_online "$REPS" 4 modconv1_online 2 "$B" "$LWE_N" "$T"
@@ -273,38 +316,18 @@ if [[ " $PHASES " == *" throughput "* ]]; then
     done
 fi
 
-# ------------------------------------------------------------------ latency
-# One decryption at a time, across the ping x parties grid. Threads are pinned
-# to 1: at batch=1 there is nothing to split and an extra tape only adds a tape.
-if [[ " $PHASES " == *" latency "* ]]; then
-    CSV2="$RESULTS/latency.csv"
-    echo "protocol,parties,beta,ping_ms,bandwidth,net_emulated,reps,latency_ms_median,rounds,bytes_per_dec,mismatches,raw_times_s" > "$CSV2"
-    for PING in $PINGS; do
-        net "$PING" 1gbit
-        for N in $PARTIES; do
-            B2=$(beta2_of "$N")
-            ensure_prep "$N" "$(inputs_needed 1 "$B2")"
-            repeat_online "$REPS" "$N" modconv1_online 2 1 "$LWE_N" 1
-            BPD=$(awk "BEGIN{printf \"%.1f\", $LAST_MB*1048576}")
-            echo "modconv1,$N,2,$PING,1gbit,$EMU,$REPS,$(awk "BEGIN{printf \"%.4f\", $MED_S*1000}"),$LAST_ROUNDS,$BPD,$ERR_TOTAL,\"$RAW\"" >> "$CSV2"
-            repeat_online "$REPS" "$N" modconv2_online "$N" "$B2" 1 "$LWE_N" 1
-            BPD=$(awk "BEGIN{printf \"%.1f\", $LAST_MB*1048576}")
-            echo "modconv2,$N,$B2,$PING,1gbit,$EMU,$REPS,$(awk "BEGIN{printf \"%.4f\", $MED_S*1000}"),$LAST_ROUNDS,$BPD,$ERR_TOTAL,\"$RAW\"" >> "$CSV2"
-            echo "=== latency N=$N ping=${PING}ms done ==="
-        done
-    done
-fi
-
 # ------------------------------------------------------------------ preprocessing
 if [[ " $PHASES " == *" preproc "* ]]; then
     CSV3="$RESULTS/preproc.csv"
     echo "protocol,parties,beta,batch,ping_ms,bandwidth,net_emulated,time_s,mb_party0,rounds,mismatches" > "$CSV3"
     net 1 1gbit
     B2=$(beta2_of "$PREPROC_N")
-    run_preproc "$PREPROC_N" modconv1_preproc 2 "$PREPROC_BATCH"
+    compile_prog modconv1_preproc 2 "$PREPROC_BATCH"
+    run_prog "$PREPROC_N" "$PROG" -b "$PREP_BATCH"
     echo "modconv1,$PREPROC_N,2,$PREPROC_BATCH,1,1gbit,$EMU,$RUN_S,$RUN_MB,$RUN_ROUNDS,$RUN_ERR" >> "$CSV3"
     echo "=== preproc modconv1 : $RUN_S s for $PREPROC_BATCH ==="
-    run_preproc "$PREPROC_N" modconv2_preproc "$PREPROC_N" "$B2" "$PREPROC_BATCH"
+    compile_prog modconv2_preproc "$PREPROC_N" "$B2" "$PREPROC_BATCH"
+    run_prog "$PREPROC_N" "$PROG" -b "$PREP_BATCH"
     echo "modconv2,$PREPROC_N,$B2,$PREPROC_BATCH,1,1gbit,$EMU,$RUN_S,$RUN_MB,$RUN_ROUNDS,$RUN_ERR" >> "$CSV3"
     echo "=== preproc modconv2 : $RUN_S s for $PREPROC_BATCH ==="
 fi
