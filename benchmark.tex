@@ -90,6 +90,7 @@ The measured round counts are MP-SPDZ's own, which count one round per polling i
 The preprocessing is where the two protocols separate.
 $\Pi_\mathsf{ModConv1}$ issues no secure multiplication at all, but it needs $63$ shared random bits, and it is those bits that dominate its cost entirely.
 $\Pi_\mathsf{ModConv2}$ instead has each party contribute its own mask, so it consumes no shared randomness and only the $(N-1)\beta^2 = 16$ multiplications of its convolution, and comes out an order of magnitude cheaper on both counts.
+Neither figure is dominated by the protocol: \cref{tab:benchmark-preproc-cmp} separates the two contributions.
 That comparison is not like for like, however, and \cref{sec:benchmark-caveats} says why.
 It is worth noting where $\Pi_\mathsf{ModConv1}$'s cost actually sits: a shared random bit is not free in SPDZ2k, which realizes it by the square-root trick, drawing on Beaver triples generated over an auxiliary ring.
 The protocol issues no $\Mul$ command, as \cref{tab:modconv} records, but the $\RandomBit$ commands it does issue are what the measurement is made of, so that is where an optimization of this preprocessing would have to bite.
@@ -115,16 +116,41 @@ The protocol issues no $\Mul$ command, as \cref{tab:modconv} records, but the $\
 These are the costs of a single conversion run in isolation, and they do not scale linearly: independent conversions collapse into shared rounds, so a per-thousand figure cannot be obtained by multiplying \cref{tab:benchmark-preproc} by $1000$.
 Batching one thousand conversions into a single program instead gives $37.4$~s, $1344$~MB and $176$ rounds for $\Pi_\mathsf{ModConv1}$, against $6.37$~s, $273$~MB and $33$ rounds for $\Pi_\mathsf{ModConv2}$: a factor of nearly six in time and five in communication between the two protocols, and a round count that barely grows with the batch.
 
-Both figures include the generation of the correlated randomness the protocols consume: the phase runs with MP-SPDZ's live preprocessing rather than reading from files, so the oblivious-transfer traffic that produces its random bits and Beaver triples is inside the timer.
-This is deliberate, and it is the opposite of the convention used for the online phase in \cref{sec:benchmark-comparison}: a phase whose purpose is to consume correlated randomness may fairly exclude the cost of producing it, but a phase whose purpose is to produce it may not, or it measures nothing at all.
+Both figures include the generation of the correlated randomness the protocols consume: the phase runs with MP-SPDZ's live preprocessing, so the oblivious-transfer traffic that produces its random bits and Beaver triples is inside the timer.
+That is the end-to-end cost, but it is not the convention of \cite[Table~5]{CCS:ZZLP25}, which reports its preprocessing explicitly \emph{ignoring triple and random-bit generation}.
+\Cref{tab:benchmark-preproc-cmp} therefore reports ours both ways, the second being the row to set against theirs.
 
-One consequence is that these numbers have no counterpart in \cite{CCS:ZZLP25} that we can quote.
-In its published implementation the preprocessed shares are produced at the coordinating server, which samples the secret $s$, the mask $r$ and the MAC key in the clear and additively shares them; the module that does so contains no communication whatever.
-Its offline phase is therefore a trusted dealer rather than a protocol, and setting our \cref{tab:benchmark-preproc} against it would compare a dishonest-majority protocol run over oblivious transfer with a local secret-sharing routine.
-We report our preprocessing on its own terms for that reason, and offer no ratio.
-The same dealer is what our online phase uses, which is what makes \emph{that} comparison like for like.
+\begin{table}[tbp]
+    \caption{%
+        Preprocessing for one thousand decryptions, $N = 2$, $1$~ms ping time, $1$~Gbit/sec bandwidth.
+        The second block adopts the convention of \cite[Table~5]{CCS:ZZLP25}, ignoring triple and random-bit generation, and is the one to compare with it.
+        Multiplication counts are per decryption, exact, and read off the compiler; \cite{CCS:ZZLP25} states its own as $d(2^b-b-1) + (2^{d+1}-d-2) = 2478$ with $b = d = 8$.%
+    }
+    \label{tab:benchmark-preproc-cmp}
+    \centering
+    \small
+    \begin{tabular}{@{}llccc@{}}
+        \toprule
+        & Protocol & Mults/dec & Time (s) & Data (MB) \\
+        \midrule
+        \multirow{2}{*}{\emph{incl.\ generation}}
+          & $\Pi_\mathsf{ModConv1}$ & $0$  & $37.4$  & $1344$ \\
+          & $\Pi_\mathsf{ModConv2}$ & $16$ & $6.37$  & $273$ \\
+        \midrule
+        \multirow{3}{*}{\emph{excl.\ generation}}
+          & \cite[Table~5]{CCS:ZZLP25} & $2478$ & $1.35$ & $79.29$ \\
+          & $\Pi_\mathsf{ModConv1}$ & $0$  & $\bm{0.0014}$ & $\bm{0}$ \\
+          & $\Pi_\mathsf{ModConv2}$ & $16$ & $\bm{0.028}$  & $\bm{1.55}$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
 
-It is worth being precise about what the first of those numbers measures, because it is not our protocol.
+Read at their convention, the gap is large and it is structural rather than incidental.
+$\Pi_\mathsf{ModConv1}$ issues no secure multiplication at all, and once its random bits are supplied its preparation is a local linear combination: we measure zero rounds and zero bytes, against their $79.29$~MB.
+$\Pi_\mathsf{ModConv2}$ does communicate, but only for the $(N-1)\beta^2 = 16$ multiplications of its convolution --- against the $2478$ their gate preprocessing requires per decryption --- and comes out at $1.55$~MB and three rounds, a factor of $51$ below.
+The same ratio governs the cost they exclude: they estimate their own triple generation at approximately $4.5$~MB per decryption, following Multipars' amortized $14.9$~kbit per triple, where $\Pi_\mathsf{ModConv2}$'s sixteen triples cost $0.03$~MB at the same rate.
+
+It is worth being precise about what the first block measures, because it is not our protocol.
 Generating $63\,000$ shared random bits in SPDZ2k and doing nothing else costs $1272.76$~MB; the complete preprocessing of $\Pi_\mathsf{ModConv1}$ for the same one thousand conversions costs $1344$~MB.
 The protocol's own contribution --- the corrections, the one-hot vector and the linear combinations --- is thus under $6\%$, and the rest is the price SPDZ2k charges for an authenticated random bit, about $20.2$~kB each.
 Any protocol requiring $63$ such bits per conversion would pay the same, and a bespoke implementation would not pay it at all.
@@ -250,10 +276,10 @@ The $N = 16$ figures should be read as upper bounds set by the host rather than 
 A deployment with one host per party, which is the setting the protocol is meant for, would not have this behaviour.
 
 \claude{%
-Every table above is now filled from one run of the rewritten harness, with \texttt{tc} confirmed attached and its round-trip time checked against the nominal ping on every row, five repetitions per point, and zero decryption errors across all $24$ throughput points and all $18$ latency points.
-Four things remain, the first two of which are claims about someone else's work and need your eyes.
-(i) I read \texttt{src/mpc/preprocessing.rs} and \texttt{src/network/discovery\_server.rs} of their artifact: the coordinator samples $s$, $r$ and the MAC key in the clear and additively shares them, and the preprocessing module contains no send, receive or socket call at all. That is what \cref{sec:benchmark-preproc} now says. Check it against what the paper's own text claims for its offline phase before this goes to a referee --- an artifact may simply not implement what a paper specifies, exactly as ours does not implement $\CheckedInput$.
-(ii) I recomputed their $73\,578$ from the logs in \texttt{benchmarks/}, not from their tables, aggregating total ciphertexts over the slowest concurrent job. The throughput ratio and the latency comparison both rest on that denominator; verify one cell against the published table.
-(iii) The throughput claim moved down when repeated: a single run had given $110\,610$, the median of five gives $94\,139$, so it is $1.28\times$ and not $1.5\times$, and the single-threaded figure no longer beats them. If a number appears elsewhere in the paper, it should be this one.
-(iv) Neither machine is named. Fhenix names a \texttt{c7a.32xlarge}; this section should name its counterpart, and it matters more than usual because one host carries all $N$ parties here, which is what limits the $N = 16$ rows.
+Every table above is filled from one run of the rewritten harness, with \texttt{tc} confirmed attached and its round-trip time checked against the nominal ping on every row, five repetitions per point, and zero decryption errors throughout.
+Four things remain.
+(i) \Cref{tab:benchmark-preproc-cmp}'s ``excl.\ generation'' rows are measured on my machine, unshaped, not on yours. Their round and byte columns are network-independent and stand as they are, but re-run the \texttt{preproc} phase with \texttt{tc} attached to get your own times before quoting the $0.0014$ and $0.028$ --- the harness now emits both conventions into \texttt{preproc.csv}.
+(ii) I recomputed their $73\,578$ throughput from the logs in \texttt{benchmarks/}, aggregating total ciphertexts over the slowest concurrent job. The $1.28\times$ and the latency comparison both rest on that denominator; verify one cell against their Table~3. Their Table~5 and its $2478$ multiplications I took directly from the paper.
+(iii) The throughput claim moved down when repeated: one run gave $110\,610$, the median of five gives $94\,139$, so it is $1.28\times$ and not $1.5\times$, and the single-threaded figure no longer beats them. If a number appears elsewhere in the paper, it should be this one.
+(iv) Neither machine is named. They name a \texttt{c7a.32xlarge} with 128 vCPUs; this section should name its counterpart, and it matters because one host carries all $N$ parties here, which is what limits the $N = 16$ rows.
 }

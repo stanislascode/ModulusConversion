@@ -180,6 +180,19 @@ inputs_needed() {
     awk "BEGIN{printf \"%d\", ($LWE_N + (2 + $2) * $1) * 1.5 + 10000}"
 }
 
+# preproc_inputs_needed <batch> <beta> <parties>
+# ModConv2's preprocessing takes n_l + beta values from each party, where
+# n_l = 63 - log2(beta); ModConv1's takes 63 random bits per conversion.
+preproc_inputs_needed() {
+    awk "BEGIN{
+        nl = 63 - log($2)/log(2)
+        mc2 = $3 * (nl + $2) * $1
+        mc1 = 63 * $1
+        m = (mc2 > mc1) ? mc2 : mc1
+        printf \"%d\", m * 1.5 + 20000
+    }"
+}
+
 # ------------------------------------------------------------------ runners
 # compile_prog <src> <args...> -> PROG
 # The program name carries every argument: compiling one name and running
@@ -317,19 +330,36 @@ if [[ " $PHASES " == *" throughput "* ]]; then
 fi
 
 # ------------------------------------------------------------------ preprocessing
+# Measured twice, under two conventions that answer different questions.
+#
+#   generation=included  -- live preprocessing (-b). The oblivious-transfer
+#       traffic that produces the random bits and Beaver triples is inside the
+#       timer. This is the end-to-end cost of the offline phase.
+#
+#   generation=excluded  -- the material is read from disk (-F), so the timer
+#       covers the protocol's own work alone. This is the convention of
+#       Fhenix's Table 5, "ignoring triple and random-bit generation", and is
+#       the row to set against it.
 if [[ " $PHASES " == *" preproc "* ]]; then
     CSV3="$RESULTS/preproc.csv"
-    echo "protocol,parties,beta,batch,ping_ms,bandwidth,net_emulated,time_s,mb_party0,rounds,mismatches" > "$CSV3"
+    echo "protocol,parties,beta,batch,ping_ms,bandwidth,net_emulated,generation,time_s,mb_party0,rounds,mismatches" > "$CSV3"
     net 1 1gbit
     B2=$(beta2_of "$PREPROC_N")
-    compile_prog modconv1_preproc 2 "$PREPROC_BATCH"
-    run_prog "$PREPROC_N" "$PROG" -b "$PREP_BATCH"
-    echo "modconv1,$PREPROC_N,2,$PREPROC_BATCH,1,1gbit,$EMU,$RUN_S,$RUN_MB,$RUN_ROUNDS,$RUN_ERR" >> "$CSV3"
-    echo "=== preproc modconv1 : $RUN_S s for $PREPROC_BATCH ==="
-    compile_prog modconv2_preproc "$PREPROC_N" "$B2" "$PREPROC_BATCH"
-    run_prog "$PREPROC_N" "$PROG" -b "$PREP_BATCH"
-    echo "modconv2,$PREPROC_N,$B2,$PREPROC_BATCH,1,1gbit,$EMU,$RUN_S,$RUN_MB,$RUN_ROUNDS,$RUN_ERR" >> "$CSV3"
-    echo "=== preproc modconv2 : $RUN_S s for $PREPROC_BATCH ==="
+    ensure_prep "$PREPROC_N" "$(preproc_inputs_needed "$PREPROC_BATCH" "$B2" "$PREPROC_N")"
+
+    for MODE in included excluded; do
+        if [ "$MODE" = included ]; then FLAGS=(-b "$PREP_BATCH"); else FLAGS=(-F); fi
+
+        compile_prog modconv1_preproc 2 "$PREPROC_BATCH"
+        run_prog "$PREPROC_N" "$PROG" "${FLAGS[@]}"
+        echo "modconv1,$PREPROC_N,2,$PREPROC_BATCH,1,1gbit,$EMU,$MODE,$RUN_S,$RUN_MB,$RUN_ROUNDS,$RUN_ERR" >> "$CSV3"
+        echo "=== preproc modconv1 (generation $MODE): $RUN_S s, $RUN_MB MB, $RUN_ROUNDS rounds, mismatches $RUN_ERR ==="
+
+        compile_prog modconv2_preproc "$PREPROC_N" "$B2" "$PREPROC_BATCH"
+        run_prog "$PREPROC_N" "$PROG" "${FLAGS[@]}"
+        echo "modconv2,$PREPROC_N,$B2,$PREPROC_BATCH,1,1gbit,$EMU,$MODE,$RUN_S,$RUN_MB,$RUN_ROUNDS,$RUN_ERR" >> "$CSV3"
+        echo "=== preproc modconv2 (generation $MODE): $RUN_S s, $RUN_MB MB, $RUN_ROUNDS rounds, mismatches $RUN_ERR ==="
+    done
 fi
 
 echo
