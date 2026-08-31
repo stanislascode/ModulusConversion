@@ -25,6 +25,9 @@ PREPROC_N=${PREPROC_N:-2}
 LWE_N=${LWE_N:-1024}
 RESULTS=${RESULTS:-"$HERE/results"}
 
+NPROC=$( (command -v nproc >/dev/null && nproc) || sysctl -n hw.ncpu 2>/dev/null || echo 1)
+THREADS=${THREADS:-$(( NPROC / 4 > 0 ? NPROC / 4 : 1 ))}
+
 cp "$HERE"/modconv.py "$HERE"/modconv*.mpc "$MPSPDZ/Programs/Source/"
 mkdir -p "$RESULTS"
 cd "$MPSPDZ"
@@ -115,24 +118,25 @@ fi
 # ---------------------------------------------------------------- table 1
 if [[ " $PHASES " == *" latency "* ]] || [[ " $PHASES " == *" throughput "* ]]; then
     CSV1="$RESULTS/table1.csv"
-    echo "protocol,parties,beta,ping_ms,bandwidth,net_emulated,latency_ms,throughput_dec_per_sec,batch,mismatches" > "$CSV1"
+    echo "protocol,parties,beta,ping_ms,bandwidth,net_emulated,latency_ms,throughput_dec_per_sec,batch,threads,mismatches" > "$CSV1"
     net 1 1gbit
+    echo "    throughput runs use $THREADS thread(s) per party ($NPROC cores detected)"
     B2=$(beta2_of 4)
     for p in 1 2; do
         if [ "$p" = 1 ]; then
-            run 4 modconv1_online 2 1 "$LWE_N"
+            run 4 modconv1_online 2 1 "$LWE_N" 1
             L_S=$RUN_S; L_E=$RUN_ERR
-            run 4 modconv1_online 2 "$BATCH_SIZE" "$LWE_N"
+            run 4 modconv1_online 2 "$BATCH_SIZE" "$LWE_N" "$THREADS"
             NAME=modconv1; BETA=2
         else
-            run 4 modconv2_online 4 "$B2" 1 "$LWE_N"
+            run 4 modconv2_online 4 "$B2" 1 "$LWE_N" 1
             L_S=$RUN_S; L_E=$RUN_ERR
-            run 4 modconv2_online 4 "$B2" "$BATCH_SIZE" "$LWE_N"
+            run 4 modconv2_online 4 "$B2" "$BATCH_SIZE" "$LWE_N" "$THREADS"
             NAME=modconv2; BETA=$B2
         fi
         TP=$(awk "BEGIN{printf \"%.1f\", $BATCH_SIZE/$RUN_S}")
         LMS=$(awk "BEGIN{printf \"%.4f\", $L_S*1000}")
-        echo "$NAME,4,$BETA,1,1gbit,$EMU,$LMS,$TP,$BATCH_SIZE,$((L_E + RUN_ERR))" >> "$CSV1"
+        echo "$NAME,4,$BETA,1,1gbit,$EMU,$LMS,$TP,$BATCH_SIZE,$THREADS,$((L_E + RUN_ERR))" >> "$CSV1"
         echo "=== table1 $NAME : latency ${LMS} ms, throughput $TP dec/s ==="
     done
 fi
@@ -145,9 +149,9 @@ if [[ " $PHASES " == *" latency "* ]]; then
         net "$PING" 1gbit
         for N in $PARTIES; do
             B2=$(beta2_of "$N")
-            run "$N" modconv1_online 2 1 "$LWE_N"
+            run "$N" modconv1_online 2 1 "$LWE_N" 1
             echo "modconv1,$N,2,$PING,1gbit,$EMU,$(awk "BEGIN{printf \"%.4f\", $RUN_S*1000}"),$RUN_ROUNDS,$RUN_MB,$RUN_ERR" >> "$CSV2"
-            run "$N" modconv2_online "$N" "$B2" 1 "$LWE_N"
+            run "$N" modconv2_online "$N" "$B2" 1 "$LWE_N" 1
             echo "modconv2,$N,$B2,$PING,1gbit,$EMU,$(awk "BEGIN{printf \"%.4f\", $RUN_S*1000}"),$RUN_ROUNDS,$RUN_MB,$RUN_ERR" >> "$CSV2"
             echo "=== table2 N=$N ping=${PING}ms done ==="
         done

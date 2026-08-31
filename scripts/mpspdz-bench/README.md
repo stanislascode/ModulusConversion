@@ -47,7 +47,7 @@ message bit exactly recoverable and checkable.
 | File | Role |
 |---|---|
 | `modconv.py` | protocol library |
-| `modconv1_online.mpc`, `modconv2_online.mpc` | timed decryption, preprocessing from a trusted dealer |
+| `modconv1_online.mpc`, `modconv2_online.mpc` | timed decryption, preprocessing from a trusted dealer; args `… batch lwe_n threads …` |
 | `modconv1_preproc.mpc`, `modconv2_preproc.mpc` | secure preprocessing, no dealer |
 | `run_benchmark.sh` | the three benchmarks |
 | `parse_run.py` | pulls timings out of a run log (used by the script) |
@@ -87,8 +87,8 @@ Three phases, three CSVs in `results/`:
 | `preproc` | `preproc.csv` | seconds for the batched preprocessing of 1000 decryptions, N=2 |
 
 Run one phase at a time with `PHASES="preproc" ./run_benchmark.sh`. Other
-knobs: `BATCH_SIZE` (default 1000), `PARTIES`, `PINGS`, `PREPROC_N`,
-`LWE_N`, `RESULTS`.
+knobs: `BATCH_SIZE` (default 1000), `THREADS` (default `nproc/4`, see below),
+`PARTIES`, `PINGS`, `PREPROC_N`, `LWE_N`, `RESULTS`.
 
 Every row carries a `mismatches` column: the number of decryptions in the
 batch whose opened plaintext differs from the value fixed in the clear at
@@ -105,7 +105,39 @@ throughput gain is this.
 Do **not** run configurations concurrently to go faster: the parties already
 share the machine, and overlapping runs would contend for CPU and corrupt
 exactly the timings being measured. The parallelism that is safe here is the
-one inside a run, which is what the vectorization buys.
+one inside a run — vectorization, and the threading below.
+
+### Threads per party
+
+Vectorization removes the *round* cost of a batch but not its *CPU* cost:
+each party still evaluates `BATCH_SIZE × n` local multiplications and
+`BATCH_SIZE` MAC checks on one core. On a machine with more cores than
+parties, that leaves most of the machine idle, and throughput is then bounded
+by cores-per-party rather than by the protocol.
+
+`THREADS` splits the batch across `@multithread` tapes inside each party.
+`THREADS=T` cuts the batch into `T` contiguous slices, each opened and
+MAC-checked on its own thread. The default is `nproc/4` — one thread per core
+that the four-party throughput run would otherwise leave unused — and
+`THREADS=1` reproduces the single-threaded behaviour exactly.
+
+Two things to know before reading a threaded row:
+
+- **Threading is applied to the throughput runs only.** At `batch = 1` there
+  is nothing to split, and the extra tape costs a setup its work cannot
+  amortize; the latency rows in both tables are run at `THREADS=1`, and the
+  script hard-codes that rather than taking it from the environment.
+- **Threaded rounds are not comparable to unthreaded ones.** MP-SPDZ counts
+  each thread's rounds separately and warns that they are "counted double due
+  to multi-threading", so a `T`-thread run reports roughly `T` times the
+  rounds of the same work on one thread while taking less wall time. Compare
+  round counts only at equal `THREADS`, which is why `table1.csv` records the
+  column.
+
+More threads than spare cores makes things worse, not better: with `T` threads
+per party and `N` parties the machine is asked for `N·T` runnable threads, and
+past `nproc` they contend. On a 20-core host running `N=4` the useful range is
+`T ≤ 5`; on a 2-core sandbox even `T=2` is already oversubscribed.
 
 ### Why `compile.py` cannot just go in your PATH
 
