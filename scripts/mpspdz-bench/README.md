@@ -106,9 +106,39 @@ Knobs: `PARTIES`, `THREAD_LIST`, `REPS` (default 5, reported as a median),
 **Two costs to know before starting.** The grid is
 `|BW| x |PING| x |PARTIES| x |THREAD_LIST| x 2 protocols x REPS` runs — 360 at
 the defaults — so budget an hour or more, and drop `REPS` to 3 for a first
-look. And `Fake-Offline.x` is sized to the largest configuration per party
-count: at `N=16`, `beta=32` and `GRID_BATCH=10000` that is several gigabytes
-on disk. Check free space, or lower `GRID_BATCH`.
+look. And the offline data takes disk: roughly `174 MB x (N/4)^1.5` per
+120000 inputs, where the input count is `lwe_n + (2 + beta) * batch`. The
+script estimates this before each generation and refuses rather than filling
+the disk, but check `df` first anyway.
+
+### Why the offline data is not generated with `--default`
+
+`Fake-Offline.x` writes **22 directories per party count**, one per protocol
+family — gf2n, Shamir, replicated, dabits over other rings — of which these
+programs read exactly one, `<N>-Z64,64-64`. Passing `--default` sizes all
+twenty-two: at `N=16` that measured 16 GB where the SPDZ2k part was 1.9 GB,
+and one benchmark run filled a 436 GB disk.
+
+The script therefore uses the per-type counters instead — `-inp` for the
+online phases, plus `-bit` and `-trip` for the preprocessing one — and deletes
+the sibling directories once written. The same configuration that produced
+893 MB under `--default` produces 108 MB this way, and the runs are
+bit-for-bit unaffected.
+
+If a previous run has already filled the disk, everything under
+`Player-Data/[0-9]*-*` is regenerable:
+
+```sh
+rm -rf $MPSPDZ/Player-Data/[0-9]*-*
+```
+
+That touches no certificates (`P*.pem`, `*.key`) and no `Input-P*` files,
+which compilation rewrites anyway.
+
+**The preprocessing phase measures `-F` before live.** A live-preprocessing
+run rewrites `Player-MAC-Keys-*`, which invalidates the signature on the files
+`-F` reads; taking the two measurements in the other order fails with
+"Signature ... doesn't match protocol".
 
 Every row carries a `mismatches` column: the number of decryptions whose
 opened plaintext differs from the value fixed in the clear at compile time.

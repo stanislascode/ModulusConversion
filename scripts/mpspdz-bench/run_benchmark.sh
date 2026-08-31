@@ -53,7 +53,7 @@ LATENCY_PINGS=${LATENCY_PINGS:-"1 10 100"}
 # Their Table 3 grid.
 GRID_PINGS=${GRID_PINGS:-"1 10 100"}
 BANDWIDTHS=${BANDWIDTHS:-"1gbit 100mbit"}
-GRID_BATCH=${GRID_BATCH:-10000}
+GRID_BATCH=${GRID_BATCH:-3000}
 
 # `sweep` only.
 BATCHES=${BATCHES:-"1000 5000 10000"}
@@ -174,18 +174,67 @@ net() {
 }
 
 # ------------------------------------------------------------------ offline data
+beta2_of() { local b=1; while [ "$b" -lt $(($1 + 1)) ]; do b=$((b * 2)); done; echo "$b"; }
+
 declare -A PREP_SIZE
 
 # ensure_prep <parties> <items>
 # Fake-Offline.x writes a trusted dealer's material to disk. This is not a
 # secure offline phase and is not what `preproc` measures; it exists so that
 # the online timer covers the online phase alone, as Fhenix's does.
+# Fake-Offline.x writes 22 directories per party count, one per protocol
+# family, of which we read exactly one. Passing --default sizes them all: at
+# N=16 that was 16 GB where the SPDZ2k part was 1.9 GB, and it filled a 436 GB
+# disk in a single benchmark run. The per-type counters size only what the
+# programs consume -- inputs for the online phases, plus bits and triples for
+# the preprocessing one -- and the siblings are removed once written.
+#
+# Calibration: N=4 with 120000 inputs writes 174 MB across all directories,
+# and the cost grows about as N^1.5.
+prep_mb() { awk "BEGIN{printf \"%.0f\", 174 * ($1/4)^1.5 * $2/120000}"; }
+
+prep_keep() { echo "$1-Z$K_PARAM,$S_PARAM-$K_PARAM"; }
+
+# drop_siblings <parties> -- everything Fake-Offline wrote that we never read
+drop_siblings() {
+    local n=$1 keep
+    keep=$(prep_keep "$n")
+    find Player-Data -maxdepth 1 -type d -name "$n-*" ! -name "$keep" -exec rm -rf {} + 2>/dev/null || true
+}
+
+# fake_offline <parties> <ninputs> [extra args...]
+fake_offline() {
+    local n=$1 ninputs=$2; shift 2
+    local want free
+    want=$(prep_mb "$n" "$ninputs")
+    free=$(df -Pm . | awk 'NR==2{print $4}')
+    if [ "$free" -lt $(( want * 2 )) ]; then
+        echo >&2
+        echo "Refusing to generate offline data for N=$n: about ${want} MB needed," >&2
+        echo "${free} MB free. The requirement is driven by ModConv2's beta:" >&2
+        echo "    inputs = lwe_n + (2 + beta) * batch, beta = $(beta2_of "$n") at N=$n" >&2
+        echo "Lower GRID_BATCH, free space, or run PARTIES one at a time." >&2
+        echo "Old preprocessing is reclaimable:" >&2
+        echo "    rm -rf \$MPSPDZ/Player-Data/[0-9]*-*" >&2
+        exit 1
+    fi
+    echo "    offline data for N=$n: $ninputs inputs (about ${want} MB)"
+    drop_siblings "$n"
+    ./Fake-Offline.x "$n" -Z "$K_PARAM" -S "$S_PARAM" --default 2000 \
+        -inp "$ninputs,$ninputs" "$@" \
+        > "$RESULTS/fake-offline-N$n-$ninputs.log" 2>&1 || {
+        echo >&2
+        echo "Fake-Offline.x failed for N=$n. It aborts without a message when it" >&2
+        echo "runs out of disk or memory; see the log, and check df and free." >&2
+        exit 1
+    }
+    drop_siblings "$n"
+}
+
 ensure_prep() {
     local n=$1 need=$2 have=${PREP_SIZE[$1]:-0}
     [ "$need" -le "$have" ] && return 0
-    echo "    offline data for N=$n: generating $need items"
-    ./Fake-Offline.x "$n" -Z "$K_PARAM" -S "$S_PARAM" --default "$need" \
-        > "$RESULTS/fake-offline-N$n-$need.log" 2>&1
+    fake_offline "$n" "$need"
     PREP_SIZE[$1]=$need
 }
 
@@ -199,7 +248,6 @@ preproc_inputs_needed() {
                 printf \"%d\", ((a > b) ? a : b) * 1.5 + 20000 }"
 }
 
-beta2_of() { local b=1; while [ "$b" -lt $(($1 + 1)) ]; do b=$((b * 2)); done; echo "$b"; }
 
 # ------------------------------------------------------------------ runners
 # The program name carries every argument: compiling one name and running
@@ -346,8 +394,16 @@ if [[ " $PHASES " == *" preproc "* ]]; then
     echo "protocol,parties,beta,batch,ping_ms,bandwidth,net_emulated,generation,time_s,mb_party0,rounds,mismatches" > "$CSV"
     net 1 1gbit
     B2=$(beta2_of "$PREPROC_N")
-    ensure_prep "$PREPROC_N" "$(preproc_inputs_needed "$PREPROC_BATCH" "$B2" "$PREPROC_N")"
-    for MODE in included excluded; do
+    # ModConv1 draws 63 random bits per conversion, ModConv2 (N-1)*beta^2
+    # triples; both are needed for the -F ("excluded") measurement.
+    PP_IN=$(preproc_inputs_needed "$PREPROC_BATCH" "$B2" "$PREPROC_N")
+    PP_BIT=$(( 63 * PREPROC_BATCH * 2 ))
+    PP_TRI=$(( (PREPROC_N - 1) * B2 * B2 * PREPROC_BATCH * 2 ))
+    fake_offline "$PREPROC_N" "$PP_IN" -bit "$PP_BIT,$PP_BIT" -trip "$PP_TRI,$PP_TRI"
+    PREP_SIZE[$PREPROC_N]=$PP_IN
+    # -F first: a live-preprocessing run rewrites Player-MAC-Keys-*, which
+    # invalidates the signature on the files -F reads.
+    for MODE in excluded included; do
         if [ "$MODE" = included ]; then FLAGS=(-b "$PREP_BATCH"); else FLAGS=(-F); fi
         compile_prog modconv1_preproc 2 "$PREPROC_BATCH"
         run_prog "$PREPROC_N" "$PROG" "${FLAGS[@]}"
