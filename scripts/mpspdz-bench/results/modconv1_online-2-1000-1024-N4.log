@@ -1,0 +1,19 @@
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 0 -N 4 -d modconv1_online-2-1000-1024 -pn 16694 -h localhost -N 4
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 1 -N 4 -d modconv1_online-2-1000-1024 -pn 16694 -h localhost -N 4
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 2 -N 4 -d modconv1_online-2-1000-1024 -pn 16694 -h localhost -N 4
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 3 -N 4 -d modconv1_online-2-1000-1024 -pn 16694 -h localhost -N 4
+Using SPDZ2k security parameter 64
+Using statistical security parameter 40
+Trying to run 64-bit computation
+Starting timer 1 at 0 (0 MB, 0 rounds) after 3.2834e-05
+Stopped timer 1 at 0.0254018 (0.096624 MB, 10 rounds)
+batch: 1000
+mismatches: 0
+Tinier open counter: 0
+SPDZ gf2n_long open counter: 0
+SPDZ2^(64+64) open counter: 3
+The following benchmarks are including preprocessing (offline phase).
+Time = 1.40877 seconds 
+Time1 = 0.0254018 seconds (0.096624 MB, 10 rounds)
+Data sent = 31.2924 MB in ~244 rounds (party 0 only; use '-v' for more details)
+Global data sent = 124.446 MB (all parties)
