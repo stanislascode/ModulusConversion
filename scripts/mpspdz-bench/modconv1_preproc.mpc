@@ -1,24 +1,30 @@
-import sys, os
+import sys, os, random
 sys.path.insert(0, os.path.join(os.getcwd(), 'Programs/Source'))
 
-from modconv import (Inputs, read_from, preproc_modconv1, sample_input,
-                     online_lookup, check_result, warm_up)
+from modconv import (Inputs, read_vec_from, preproc_modconv1, online_lookup,
+                     warm_up, signed_t, count_mismatches, Q)
 from Compiler.library import start_timer, stop_timer, print_ln
 
 beta = int(program.args[1]) if len(program.args) > 1 else 2
+batch = int(program.args[2]) if len(program.args) > 2 else 1
 
-x = sample_input(beta)
+step = Q // beta
+mu = [random.randrange(2) for _ in range(batch)]
+e = [random.randrange(step) for _ in range(batch)]
+
 inputs = Inputs(1)
-inputs.put(0, x)
+inputs.put_many(0, [mu[i] * Q + e[i] for i in range(batch)])
 inputs.flush()
 
 warm_up()
 
 start_timer(1)
-m, us = preproc_modconv1(beta)
+m, us = preproc_modconv1(beta, batch)
 stop_timer(1)
 
-x_share = read_from(0, 1)[0]
-res, y = online_lookup(x_share, m, us, beta)
-print_ln('beta: %s  corrections: %s', beta, len(us))
-check_result(res, x)
+x_share = read_vec_from(0, batch)
+lifted, y = online_lookup(x_share, m, us, beta)
+errors = count_mismatches((x_share - lifted).reveal(),
+                          [signed_t(b * Q) for b in mu], batch)
+print_ln('batch: %s  beta: %s', batch, beta)
+print_ln('mismatches: %s', errors)

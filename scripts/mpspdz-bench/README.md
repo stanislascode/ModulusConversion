@@ -1,20 +1,56 @@
-# Modulus-conversion benchmarks: Z_{2^63} → Z_{2^64}
+# Decryption benchmarks: latency and throughput
 
-Benchmarks for the three protocols of `sec:modconv`, run on MP-SPDZ's SPDZ2k
-backend. Pure modulus conversion — no threshold-decryption wrapper.
+`ModConv1` and `ModConv2` of `sec:modconv` on MP-SPDZ's SPDZ2k backend,
+measured as the decryption they are meant to serve. `q = 2^63`, `t = 2^64`.
 
-**Input:** a SPDZ2k sharing `⟦x⟧_q` with `q = 2^63`.
-**Output:** a SPDZ2k sharing `⟦x⟧_t` with `t = 2^64`.
+Plain LWE over `Z_q`, not ring-LWE. Fhenix's `F_Decrypt` takes `c` as "an LWE
+ciphertext over `Z_q`", its §1.2 has "the secret key is a vector `s` over
+`Z_q = Z_{2^k}`", and `Π_Decrypt` step 1 computes `[z]_k = ⟨c,s⟩_k + 2^{l−1}`.
+Its benchmark uses `(n, q, p) = (1024, 2^64, 2)`, which is what `LWE_N`
+defaults to here.
+
+## The instance
+
+**Untimed.** A secret key `⟦s⟧ ∈ Z_q^n` with coordinates below `2^16`, and a
+per-decryption message bit `⟦μ⟧`. The ciphertext coordinates are drawn at run
+time by `regint.get_random(34)`, so every decryption in a batch gets its own,
+without putting `batch × n` constants in the bytecode.
+
+**Timed.**
+
+1. `e = ⟨c, ⟦s⟧⟩` — local: `n` products by public constants and `n−1`
+   additions, a `LinComb`, the MAC following by linearity.
+2. `⟦x⟧ = e + ⟦μ⟧·2^63`.
+3. `⟦x⟧ mod 2^63 = ⟦x mod 2^63⟧_{2^63}` — `DivModConv`, free, and not even an
+   instruction: the machine ring is `t` and `q | t`, so the reduction is the
+   identity on the sharing.
+4. `ModConv(⟦x mod 2^63⟧_{2^63}) = ⟦x mod 2^63⟧_{2^64}` — one opening.
+5. `⟦x⟧ − ⟦x mod 2^63⟧_{2^64} = ⟦μ⟧·2^63`, opened — one opening.
+
+Two openings, one more than the bare conversion. That extra one is the point:
+steps 1, 2 and 5 are local, but under SPDZ2k they still move the MAC, and
+that cost only surfaces when the run opens something.
+
+**Why the noise is in range without rejection.** The precondition is
+`x mod 2^63 ≤ q − Nq/β`, which is `2^62` for both protocols at the β we use.
+Here `x mod 2^63 = e = ⟨c,s⟩`, and with `n = 1024`, `s < 2^16` and `c < 2^34`
+the worst case is `2^10 · 2^16 · 2^34 = 2^60 < 2^62`. So the bound holds by
+construction, as it does in a real scheme where the noise is small by design,
+rather than by resampling until it does. `sample_lwe_key` asserts it.
+
+The ciphertext coordinates are therefore not uniform over `Z_q`. That changes
+no cost — a 64-bit multiply is a 64-bit multiply — and it is what makes the
+message bit exactly recoverable and checkable.
 
 ## Files
 
 | File | Role |
 |---|---|
-| `modconv.py` | protocol library (dealer, preprocessing, online phases) |
-| `modconv1_preproc.mpc`, `modconv2_preproc.mpc`, `modconv3_preproc.mpc` | secure preprocessing, no dealer |
-| `modconv1_online.mpc`, `modconv2_online.mpc`, `modconv3_online.mpc` | online phase, preprocessing from a trusted dealer |
-| `run_preproc.sh` | preprocessing sweep, `N = 2` |
-| `run_online.sh` | online sweep, `N ∈ {4,8,16}` × Fhenix's network grid |
+| `modconv.py` | protocol library |
+| `modconv1_online.mpc`, `modconv2_online.mpc` | timed decryption, preprocessing from a trusted dealer |
+| `modconv1_preproc.mpc`, `modconv2_preproc.mpc` | secure preprocessing, no dealer |
+| `run_benchmark.sh` | the three benchmarks |
+| `parse_run.py` | pulls timings out of a run log (used by the script) |
 
 ## Requirements
 
@@ -31,36 +67,45 @@ does exactly this):
 brew install openssl boost libsodium gmp yasm ntl cmake
 ```
 
-On Debian/Ubuntu the equivalent is `libsodium-dev libgmp-dev libssl-dev
-libboost-dev libboost-thread-dev libboost-iostreams-dev libboost-filesystem-dev
-cmake yasm`, plus GCC 11+ or clang 11+. MP-SPDZ builds libOTe itself via
-`make libote` when needed. Python 3 is required for `compile.py`, which is
-pure Python and needs no packages of its own.
+On Debian/Ubuntu: `libsodium-dev libgmp-dev libssl-dev libboost-dev
+libboost-thread-dev libboost-iostreams-dev libboost-filesystem-dev cmake
+yasm`, plus GCC 11+ or clang 11+. `compile.py` is pure Python.
 
 ## How to run
 
-The scripts live in this repo and stay there. Tell them where your MP-SPDZ git
-root is — the directory containing `compile.py` — and run them:
-
 ```sh
-export MPSPDZ=$HOME/MP-SPDZ
-
-./run_preproc.sh        # preprocessing, N=2
-./run_online.sh         # online, N=4,8,16 x {1,10,100}ms x {100Mbit,1Gbit}
+export MPSPDZ=$HOME/MP-SPDZ      # the directory containing compile.py
+./run_benchmark.sh
 ```
 
-Without `MPSPDZ` set, both scripts stop immediately and say so.
+Three phases, three CSVs in `results/`:
 
-They copy `modconv.py` and the six `.mpc` into `$MPSPDZ/Programs/Source/` on
-every run, so editing them here is enough — no manual sync.
+| Phase | Output | Content |
+|---|---|---|
+| `throughput` | `table1.csv` | N=4, 1 ms, 1 Gbit: latency (ms) and throughput (dec/sec) for both protocols |
+| `latency` | `table2.csv` | latency across ping {1,10,100} ms × parties {4,8,16} |
+| `preproc` | `preproc.csv` | seconds for the batched preprocessing of 1000 decryptions, N=2 |
 
-Results land in this repo, under `results/{preproc,online}/`: a `summary.csv`
-plus one `.log` per configuration. Override with env vars:
+Run one phase at a time with `PHASES="preproc" ./run_benchmark.sh`. Other
+knobs: `BATCH_SIZE` (default 1000), `PARTIES`, `PINGS`, `PREPROC_N`,
+`LWE_N`, `RESULTS`.
 
-```sh
-PARTIES="4 8" PINGS="10" BATCH=128 BETA2=8 ./run_online.sh
-RESULTS=/tmp/out ./run_preproc.sh
-```
+Every row carries a `mismatches` column: the number of decryptions in the
+batch whose opened plaintext differs from the value fixed in the clear at
+compile time. Anything but `0` invalidates the row.
+
+## Where the speed comes from
+
+The batch is **vectorized**, not looped: `⟦s⟧`, the masks and the correction
+tables are `sint` vectors of length `BATCH_SIZE`, so 1000 decryptions issue
+the same *two* opening instructions as one, and the compiler reports 2001
+opens executed in ~106 measured rounds rather than ~10 000. Almost all of the
+throughput gain is this.
+
+Do **not** run configurations concurrently to go faster: the parties already
+share the machine, and overlapping runs would contend for CPU and corrupt
+exactly the timings being measured. The parallelism that is safe here is the
+one inside a run, which is what the vectorization buys.
 
 ### Why `compile.py` cannot just go in your PATH
 
@@ -81,17 +126,21 @@ another's inputs.
 
 ## What is measured
 
-The timer covers the online phase (or the preprocessing) and nothing else.
-Excluded, deliberately:
+The timer covers the timed steps above (or the preprocessing) and nothing
+else. Excluded, deliberately:
 
-- the dealer's `Input` calls that hand the preprocessing to the parties —
-  Fhenix likewise loads its precomputed gates into memory before timing;
+- sampling the instance and the dealer's `Input` calls handing the
+  preprocessing to the parties — Fhenix likewise loads its precomputed gates
+  into memory before timing starts;
 - a one-time warm-up `Open`, which absorbs SPDZ2k's first-Open setup cost
-  (measured at ~80 rounds for the first `Open` in a process, ~5 for every
-  one after it — a session cost, not a per-conversion cost);
-- the final `Open` that checks the result against the expected value. That
-  opening is verification, not protocol. Every run reports `converted value`
-  and `expected value`, and `summary.csv` carries a `correct` column.
+  (~80 rounds for the first `Open` in a process, ~5 for every one after it —
+  a session cost, not a per-decryption cost).
+
+Both openings of the decryption are *inside* the timer, the final one
+included: it produces the plaintext, so it is protocol, not verification.
+Correctness costs no further opening — the script compares the opened
+plaintexts against the bits fixed in the clear at compile time, and every row
+carries the resulting `mismatches` count, which is 0 on a good run.
 
 ## Parameters
 
@@ -100,9 +149,8 @@ exactly and no ring slack is needed anywhere.
 
 | | β | precondition on `x` | Mults (preprocessing) |
 |---|---|---|---|
-| ModConv1 | 2, fixed for every N | `x ≤ q − q/β = 2^62` | 0 |
-| ModConv2 | depends on N — see below | `x ≤ q − Nq/β` | `(N−1)β²` |
-| ModConv3 | — | none | 0 |
+| ModConv1 | 2, fixed for every N | `cs mod 2^63 ≤ q − q/β = 2^62` | 0 |
+| ModConv2 | depends on N — see below | `cs mod 2^63 ≤ q − Nq/β = 2^62` | `(N−1)β²` |
 
 ### β for ModConv2 is a decision, not a detail
 
@@ -124,10 +172,11 @@ bound — `q/2` at every N instead of `q/(N+1)` — and pays roughly 3.5× the
 preprocessing multiplications for it. Which side of that is right depends on
 what the paper wants to claim; it is not for the benchmark to decide.
 
-Override it with `BETA2`:
+Override it by editing the `beta2_of` helper in `run_benchmark.sh`, or by
+compiling `modconv2_online` by hand with the β you want:
 
 ```sh
-BETA2=5 PARTIES="4" ./run_online.sh
+PARTIES="4" ./run_benchmark.sh   # beta is the second program argument
 ```
 
 **Caveat: only powers of two are implemented.** `modconv.py` derives the
@@ -152,28 +201,11 @@ Three simplifications the parameters license, each from the paper:
   test reduces to opening `⟦h⟧_Q` with `h = 1`, and nothing is ever
   rejected. ModConv1's preprocessing is therefore `k = 63` shared random
   bits and local linear combinations: no multiplication, no opening.
-- `q = 2^63` is a power of two, so by the parenthetical in
-  `step:modconv3-preproc:accept` ModConv3's preprocessing skips its
-  comparison and rejection too, leaving the same 63 random bits.
 
 ModConv2 uses `Q = t` as its auxiliary modulus. The paper endorses this
 (`taking Q to be t leaves step:modconv2-preproc:transfer nothing to do ...
 and thus returns the protocol one obtains by leaving the auxiliary modulus
 out altogether`), and a single-ring MP-SPDZ program has no cheaper option.
-
-## Comparison
-
-ModConv3's online phase compares the bit-shared mask against the public `y`.
-It is implemented as a bitwise circuit over the shared mask bits: the
-XOR-with-public terms are linear and free, and the only cost is a suffix
-product over the 63 equality bits, computed by a doubling scan — 315
-multiplications in 6 rounds. This is why no ring slack is needed: nothing
-here is a generic secure comparison of two large secret values.
-
-`protocol:compare` and `sec:compare` are forward references to a section not
-yet written, so this is one concrete point on the multiplication/round
-trade-off that section is meant to lay out, not an implementation of a
-protocol the paper already fixes.
 
 ## Deviations from the paper
 
@@ -186,8 +218,8 @@ which authenticates the values but proves nothing about their shape. Only
 the hot-one check (`step:modconv2-preproc:hot-one`) is implemented; every
 run prints its opened value, which must be 1. **ModConv2's preprocessing
 numbers therefore understate the paper's protocol**, and by an amount this
-suite does not measure. ModConv1's and ModConv3's preprocessing have no
-inputs and are not affected.
+suite does not measure. ModConv1's preprocessing takes no input and is
+not affected.
 
 **The `⟦x⟧_q` sharing is embedded in the `2^64` machine ring.** A genuine
 `Z_{2^63}` sharing has shares whose sum is only defined mod `2^63`; here
@@ -203,33 +235,51 @@ not the setup around it. Two caveats on `rounds`:
 
 - MP-SPDZ counts one round per polling iteration of its socket exchange, not
   per network round-trip, so a single `Open` reports 5 rounds rather than 1.
-  Use the compiler's `integer opens` count for round complexity — 2 for
-  ModConv1 and ModConv2 (1 protocol `Open` + 1 verification), 3 for ModConv3.
+  Use the compiler's `integer opens` count for round complexity: 2 for both
+  protocols, being the conversion's opening plus the one that yields the
+  message. The measured figure is 10, five per opening.
 - `batch` records MP-SPDZ's `-b` preprocessing batch size. It changes the
-  measured rounds and data substantially (ModConv3 at `N = 16`: 185 rounds
-  at the default vs 971 at `-b 128`), so it must be held constant across any
-  configurations being compared. It is in the CSV for exactly that reason.
+  measured rounds and data whenever a run generates triples, so it must be
+  held constant across any configurations being compared. It is in the CSV
+  for exactly that reason.
 
-`BATCH=128` is needed for ModConv3 at `N = 16` on a small machine: with
-MP-SPDZ's default batch size, live OT triple generation across 16 parties
-exhausts memory (`bad_alloc`). ModConv1 and ModConv2 need no triples and run
-at `N = 16` at the default batch size.
+Neither protocol's online phase consumes a triple, so both run at `N = 16` at
+the default batch size. `BATCH` is there for the preprocessing of ModConv2,
+whose `(N−1)β²` multiplications grow quickly with the party count.
 
 ## Network emulation
 
-Both scripts apply `tc netem` when they can, crossing the ping times
-`{1, 10, 100}` ms with bandwidths `{100 Mbit/s, 1 Gbit/s}` — Fhenix's grid —
-and pass `-d` so parties communicate pairwise rather than through a
-coordinator, matching its fully connected topology.
+The grid is Fhenix's: ping {1, 10, 100} ms crossed with 1 Gbit/s, applied
+with `tc netem` on loopback, and `-d` so parties talk pairwise rather than
+through a coordinator.
 
-`tc` needs three things, and the scripts say which one is missing:
+**Check before committing to a long run:**
 
-1. **The binary.** `sudo apt install iproute2` (Debian/Ubuntu) or
-   `sudo dnf install iproute-tc` (Fedora/RHEL).
-2. **Root.** `tc qdisc add` is privileged. The scripts call `sudo tc`
-   automatically when not run as root; you may be prompted once. Running the
-   whole benchmark as root also works but is not necessary.
-3. **The `sch_netem` kernel module.** Present on a normal distro kernel, but
+```sh
+PHASES="check" ./run_benchmark.sh
+```
+
+This applies each ping in turn and prints the loopback RTT it actually
+measures with `ping`, then exits. If the measured RTT does not track what was
+asked, the shaping is not doing what you think and the benchmark rows would
+be mislabelled.
+
+**The script refuses to run unshaped.** If `tc` cannot attach, it stops with
+a diagnosis instead of producing a full grid of rows carrying ping labels
+they never experienced — which is exactly what happened on an earlier
+attempt, where the online sweep silently produced 54 such rows. To run
+unshaped deliberately (for a pure rounds-and-bytes measurement) pass
+`ALLOW_NO_TC=1`; those rows are then explicitly not latency measurements.
+
+`tc` needs three things:
+
+1. **The binary.** `sudo apt install iproute2`, or `sudo dnf install iproute-tc`.
+2. **Root.** `tc qdisc add` is privileged. The script calls `sudo tc`
+   automatically when not run as root; you may be prompted once. This was the
+   original cause of the asymmetry between an earlier preprocessing run
+   (which happened to be run as root, and shaped correctly) and the online
+   sweep (which was not, and silently did not).
+3. **The `sch_netem` kernel module.** Present on a normal distro kernel,
    missing from minimal cloud images and most containers. Symptom:
    `Error: Specified qdisc kind is unknown`. Fix:
 
@@ -238,17 +288,9 @@ coordinator, matching its fully connected topology.
    sudo modprobe sch_netem
    ```
 
-   `Operation not permitted` instead means the VM or container has no
-   `NET_ADMIN` capability — a Docker container needs `--cap-add=NET_ADMIN`,
-   and a hypervisor-level VM normally has it already.
+   `Operation not permitted` instead means no `NET_ADMIN` capability — a
+   Docker container needs `--cap-add=NET_ADMIN`.
 
-Check by hand with:
-
-```sh
-sudo tc qdisc add dev lo root netem delay 20ms && sudo tc qdisc del dev lo root
-```
-
-When any of the three is missing the scripts run every configuration at
-native loopback speed and record `net_emulated=no`, with the ping and
-bandwidth columns naming the condition that was *intended*. Those rows are
-not latency measurements and must not be reported as such.
+The delay is set to half the requested ping, because a loopback packet
+crosses `lo` once each way, so the round trip sees it twice. The `check`
+phase is what confirms that on your kernel.

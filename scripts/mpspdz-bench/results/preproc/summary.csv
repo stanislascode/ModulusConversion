@@ -1,4 +1,0 @@
-protocol,parties,beta,ping_ms,bandwidth,net_emulated,batch,time_s,mb_party0,rounds,correct
-modconv1_preproc,2,2,1,1gbit,yes,default,0.531067,12.126,62,yes
-modconv2_preproc,2,4,1,1gbit,yes,default,0.0324017,0.364243,38,yes
-modconv3_preproc,2,-,1,1gbit,yes,default,0.532185,12.126,62,yes

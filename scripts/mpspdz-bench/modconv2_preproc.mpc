@@ -1,28 +1,33 @@
-import sys, os
+import sys, os, random
 sys.path.insert(0, os.path.join(os.getcwd(), 'Programs/Source'))
 
-from modconv import (Inputs, read_from, sample_party_shares_modconv2,
+from modconv import (Inputs, read_vec_from, sample_party_shares_modconv2,
                      preproc_modconv2, default_beta_modconv2, online_lookup,
-                     check_result, warm_up, Q)
+                     warm_up, signed_t, count_mismatches, Q)
 from Compiler.library import start_timer, stop_timer, print_ln
-import random
 
 n_parties = int(program.args[1]) if len(program.args) > 1 else 2
 beta = int(program.args[2]) if len(program.args) > 2 else default_beta_modconv2(n_parties)
+batch = int(program.args[3]) if len(program.args) > 3 else 1
+
+step = Q - n_parties * Q // beta
+mu = [random.randrange(2) for _ in range(batch)]
+e = [random.randrange(step) for _ in range(batch)]
 
 inputs = Inputs(n_parties)
-n_l = sample_party_shares_modconv2(beta, n_parties, inputs)
-x = random.randrange(Q - n_parties * Q // beta + 1)
-inputs.put(0, x)
+n_l = sample_party_shares_modconv2(beta, n_parties, inputs, batch)
+inputs.put_many(0, [mu[i] * Q + e[i] for i in range(batch)])
 inputs.flush()
 
 warm_up()
 
 start_timer(1)
-m, us = preproc_modconv2(beta, n_parties, n_l)
+m, us = preproc_modconv2(beta, n_parties, n_l, batch)
 stop_timer(1)
 
-x_share = read_from(0, 1)[0]
-res, y = online_lookup(x_share, m, us, beta)
-print_ln('parties: %s  beta: %s  corrections: %s', n_parties, beta, len(us))
-check_result(res, x)
+x_share = read_vec_from(0, batch)
+lifted, y = online_lookup(x_share, m, us, beta)
+errors = count_mismatches((x_share - lifted).reveal(),
+                          [signed_t(b * Q) for b in mu], batch)
+print_ln('batch: %s  parties: %s  beta: %s', batch, n_parties, beta)
+print_ln('mismatches: %s', errors)

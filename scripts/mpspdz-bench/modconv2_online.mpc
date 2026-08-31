@@ -1,28 +1,43 @@
-import sys, os
+import sys, os, random
 sys.path.insert(0, os.path.join(os.getcwd(), 'Programs/Source'))
 
-from modconv import (Inputs, read_from, deal_modconv2, default_beta_modconv2,
-                     online_lookup, check_result, warm_up, Q)
+from modconv import (Inputs, read_from, read_vec_from, deal_modconv2, default_beta_modconv2, sample_lwe_key,
+                     lwe_inner_product, online_lookup, warm_up, signed_t, count_mismatches, Q)
 from Compiler.library import start_timer, stop_timer, print_ln
-import random
 
 n_parties = int(program.args[1]) if len(program.args) > 1 else 4
 beta = int(program.args[2]) if len(program.args) > 2 else default_beta_modconv2(n_parties)
+batch = int(program.args[3]) if len(program.args) > 3 else 1
+lwe_n = int(program.args[4]) if len(program.args) > 4 else 1024
+s_bits = int(program.args[5]) if len(program.args) > 5 else 16
+c_bits = int(program.args[6]) if len(program.args) > 6 else 34
 
-m, us = deal_modconv2(beta, n_parties)
-x = random.randrange(Q - n_parties * Q // beta + 1)
+bound = Q - n_parties * Q // beta
+sk = sample_lwe_key(lwe_n, s_bits, c_bits, bound)
+mu = [random.randrange(2) for _ in range(batch)]
+ms, us = deal_modconv2(beta, n_parties, batch)
 
 inputs = Inputs(1)
-inputs.put_many(0, [x, m] + us)
+inputs.put_many(0, sk)
+inputs.put_many(0, mu)
+inputs.put_many(0, ms)
+for i in range(beta):
+    inputs.put_many(0, us[i])
 inputs.flush()
 
-vals = read_from(0, 2 + beta)
-x_share, m_share, u_shares = vals[0], vals[1], vals[2:]
+sk_shares = read_from(0, lwe_n)
+mu_share = read_vec_from(0, batch)
+m_share = read_vec_from(0, batch)
+u_vecs = [read_vec_from(0, batch) for _ in range(beta)]
 
 warm_up()
 
 start_timer(1)
-res, y = online_lookup(x_share, m_share, u_shares, beta)
+x_share = lwe_inner_product(sk_shares, c_bits, batch) + mu_share * Q
+lifted, y = online_lookup(x_share, m_share, u_vecs, beta)
+opened = (x_share - lifted).reveal()
 stop_timer(1)
 
-check_result(res, x)
+errors = count_mismatches(opened, [signed_t(b * Q) for b in mu], batch)
+print_ln('batch: %s', batch)
+print_ln('mismatches: %s', errors)

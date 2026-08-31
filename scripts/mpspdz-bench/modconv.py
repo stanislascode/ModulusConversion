@@ -35,12 +35,8 @@ class Inputs:
         self.vals = [[] for _ in range(n_parties)]
         os.makedirs('Player-Data', exist_ok=True)
 
-    def put(self, party, v):
-        self.vals[party].append(int(v))
-        return len(self.vals[party]) - 1
-
     def put_many(self, party, vs):
-        return [self.put(party, v) for v in vs]
+        self.vals[party].extend(int(v) for v in vs)
 
     def flush(self):
         for p, vs in enumerate(self.vals):
@@ -52,117 +48,88 @@ def read_from(party, n):
     return [sint.get_input_from(party) for _ in range(n)]
 
 
+def read_vec_from(party, size):
+    return sint.get_input_from(party, size=size)
+
+
 def warm_up():
     return sint(0).reveal()
 
 
-def random_bits(n):
-    return [sint.get_random_bit() for _ in range(n)]
-
-
-def combine_bits(bits):
-    acc = sint(0)
+def combine_bits(bits, size=1):
+    acc = sint(0, size=size)
     for i in range(len(bits)):
         acc = acc + bits[i] * (1 << i)
     return acc
 
 
 def onehot(abits):
-    n = len(abits)
     vec = [1 - abits[0], abits[0]]
-    for j in range(1, n):
+    for j in range(1, len(abits)):
         a = abits[j]
-        size = len(vec)
-        new = [None] * (2 * size)
-        for p in range(size):
+        half = len(vec)
+        new = [None] * (2 * half)
+        for p in range(half):
             hi = vec[p] * a
             new[p] = vec[p] - hi
-            new[p + size] = hi
+            new[p + half] = hi
         vec = new
     return vec
 
 
-def suffix_products(e):
-    n = len(e)
-    cur = list(e)
-    step = 1
-    while step < n:
-        nxt = []
-        for i in range(n):
-            if i + step < n:
-                nxt.append(cur[i] * cur[i + step])
-            else:
-                nxt.append(cur[i])
-        cur = nxt
-        step *= 2
-    return cur + [sint(1)]
-
-
-def corrections_from_carries(m, carry_terms, beta):
+def corrections(m, carry, delta, beta):
     us = []
     for i in range(beta):
-        acc = carry_terms[0]
+        acc = carry
         for j in range(i + 1, beta):
-            acc = acc + carry_terms[1][j]
+            acc = acc + delta[j]
         us.append(m - acc * Q)
     return us
 
 
-def preproc_modconv1(beta):
-    n_u = log2_exact(beta)
-    n_l = K_Q - n_u
-    bits = random_bits(K_Q)
-    m = combine_bits(bits)
-    delta = onehot(bits[n_l:])
-    return m, corrections_from_carries(m, (sint(0), delta), beta)
+def preproc_modconv1(beta, size=1):
+    n_l = K_Q - log2_exact(beta)
+    bits = [sint.get_random_bit(size=size) for _ in range(K_Q)]
+    m = combine_bits(bits, size)
+    return m, corrections(m, sint(0, size=size), onehot(bits[n_l:]), beta)
 
 
-def preproc_modconv3():
-    bits = random_bits(K_Q)
-    return combine_bits(bits), bits
-
-
-def sample_party_shares_modconv2(beta, n_parties, inputs):
-    n_u = log2_exact(beta)
-    n_l = K_Q - n_u
+def sample_party_shares_modconv2(beta, n_parties, inputs, size=1):
+    n_l = K_Q - log2_exact(beta)
     for s in range(n_parties):
-        ms = random.randrange(Q)
-        bits = [(ms >> i) & 1 for i in range(n_l)]
-        a = ms >> n_l
-        inputs.put_many(s, bits + [1 if i == a else 0 for i in range(beta)])
-    inputs.flush()
+        masks = [random.randrange(Q) for _ in range(size)]
+        for i in range(n_l):
+            inputs.put_many(s, [(v >> i) & 1 for v in masks])
+        for i in range(beta):
+            inputs.put_many(s, [1 if alpha_of(v, beta) == i else 0 for v in masks])
     return n_l
 
 
-def preproc_modconv2(beta, n_parties, n_l):
+def preproc_modconv2(beta, n_parties, n_l, size=1):
     deltas = []
-    m = sint(0)
+    m = sint(0, size=size)
     for s in range(n_parties):
-        vals = read_from(s, n_l + beta)
-        bits, d = vals[:n_l], vals[n_l:]
-        check = sint(0)
-        for i in range(beta):
-            check = check + d[i]
-        print_ln('hot-one check party %s: %s', s, check.reveal())
-        part = combine_bits(bits)
+        bits = [read_vec_from(s, size) for _ in range(n_l)]
+        d = [read_vec_from(s, size) for _ in range(beta)]
+        part = combine_bits(bits, size)
         for i in range(beta):
             part = part + d[i] * (i * (Q // beta))
         m = m + part
         deltas.append(d)
 
     Delta = deltas[0]
-    w = sint(0)
+    w = sint(0, size=size)
     for s in range(1, n_parties):
         prod = [[Delta[jp] * deltas[s][i] for i in range(beta)] for jp in range(beta)]
         new = []
         for j in range(beta):
-            acc = sint(0)
+            acc = sint(0, size=size)
             for jp in range(beta):
                 for i in range(beta):
                     if (jp + i) % beta == j:
                         acc = acc + prod[jp][i]
             new.append(acc)
-        chi = sint(0)
+        chi = sint(0, size=size)
         for jp in range(beta):
             for i in range(beta):
                 if jp + i >= beta:
@@ -170,60 +137,68 @@ def preproc_modconv2(beta, n_parties, n_l):
         Delta = new
         w = w + chi
 
-    return m, corrections_from_carries(m, (w, Delta), beta)
+    return m, corrections(m, w, Delta, beta)
 
 
-def deal_modconv1(beta):
-    m = random.randrange(Q)
-    am = alpha_of(m, beta)
-    return m, [(m - Q * (1 if am > i else 0)) % T for i in range(beta)]
+def deal_modconv1(beta, size):
+    ms, us = [], [[] for _ in range(beta)]
+    for _ in range(size):
+        m = random.randrange(Q)
+        am = alpha_of(m, beta)
+        ms.append(m)
+        for i in range(beta):
+            us[i].append((m - Q * (1 if am > i else 0)) % T)
+    return ms, us
 
 
-def deal_modconv2(beta, n_parties):
-    ms = [random.randrange(Q) for _ in range(n_parties)]
-    m = sum(ms)
-    s = sum(alpha_of(v, beta) for v in ms)
-    us = []
-    for i in range(beta):
-        c = -((-(s - i)) // beta)
-        us.append((m - c * Q) % T)
-    return m % Q, us
+def deal_modconv2(beta, n_parties, size):
+    ms, us = [], [[] for _ in range(beta)]
+    for _ in range(size):
+        parts = [random.randrange(Q) for _ in range(n_parties)]
+        m = sum(parts)
+        s = sum(alpha_of(v, beta) for v in parts)
+        ms.append(m % Q)
+        for i in range(beta):
+            c = -((-(s - i)) // beta)
+            us[i].append((m - c * Q) % T)
+    return ms, us
 
 
-def deal_modconv3():
-    m = random.randrange(Q)
-    return m, [(m >> i) & 1 for i in range(K_Q)]
+def sample_lwe_key(n, s_bits, c_bits, bound):
+    worst = n * ((1 << s_bits) - 1) * ((1 << c_bits) - 1)
+    assert worst <= bound, (worst, bound)
+    return [random.randrange(1, 1 << s_bits) for _ in range(n)]
 
 
-def sample_input(beta_bound):
-    return random.randrange(Q // beta_bound + 1)
+def lwe_inner_product(sk_shares, c_bits, size):
+    acc = None
+    for s in sk_shares:
+        term = s * cint(regint.get_random(c_bits, size=size))
+        acc = term if acc is None else acc + term
+    return acc
 
 
-def online_lookup(x_share, m_share, u_shares, beta):
+def online_lookup(x, m, u_vecs, beta):
     n_u = log2_exact(beta)
-    y = (x_share + m_share).reveal() & (Q - 1)
-    idx = regint(y >> (K_Q - n_u))
-    table = Array(beta, sint)
-    for i in range(beta):
-        table[i] = u_shares[i]
-    return y - table[idx], y
+    y = (x + m).reveal() & (Q - 1)
+    alpha = y >> (K_Q - n_u)
+    u = u_vecs[0] * (alpha == 0)
+    for i in range(1, beta):
+        u = u + u_vecs[i] * (alpha == i)
+    return y - u, y
 
 
-def online_compare(x_share, m_share, bit_shares):
-    y = (x_share + m_share).reveal() & (Q - 1)
-    ybits = y.bit_decompose(K_Q)
-    e = []
-    for j in range(K_Q):
-        e.append(1 - ybits[j] - bit_shares[j] + 2 * (ybits[j] * bit_shares[j]))
-    E = suffix_products(e)
-    lt = sint(0)
-    for i in range(K_Q):
-        lt = lt + ybits[i] * (E[i + 1] - E[i])
-    c = 1 - lt - E[0]
-    return y - combine_bits(bit_shares) + Q * c, y
+def signed_t(v):
+    v %= T
+    return v - T if v >= T // 2 else v
 
 
-def check_result(res, expected):
-    got = res.reveal()
-    print_ln('converted value: %s', got)
-    print_ln('expected value: %s', expected)
+def count_mismatches(opened, expected, size):
+    ref = Array(size, cint)
+    ref.assign(expected)
+    diff = Array(size, regint)
+    diff.assign_vector(regint(opened != ref.get_vector(0, size)))
+    total = regint(0)
+    for i in range(size):
+        total = total + diff[i]
+    return total
