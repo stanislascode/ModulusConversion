@@ -1,0 +1,185 @@
+WARNING: insecure preprocessing
+No MAC key share for player 0, generating a fresh ones
+Written new MAC key share to Player-Data//2-Z64,64-64//Player-MAC-Keys-R-P0
+ Key 0: 8459736715394764557
+Written new MAC key share to Player-Data//2-Z64,64-64//Player-MAC-Keys-R-P1
+ Key 1: 539845106965594573
+--------------
+Final Key: 8999581822360359130
+No MAC key share for player 0, generating a fresh ones
+Written new MAC key share to Player-Data//2-2-128//Player-MAC-Keys-2-P0
+ Key 0: b1278ebd3c52a1d1bb0c9f267a4374d9
+Written new MAC key share to Player-Data//2-2-128//Player-MAC-Keys-2-P1
+ Key 1: 5dc7878802f443220fac22e147d12ffc
+--------------
+Final Key: ece009353ea6e2f3b4a0bdc73d925b25
+Opening Player-Data//2-2-128/Triples-2-P0
+Opening Player-Data//2-2-128/Triples-2-P1
+Opening Player-Data//2-Z64,64-64/Triples-Z64,64-P0
+Opening Player-Data//2-Z64,64-64/Triples-Z64,64-P1
+Opening Player-Data//2-2-128/Bits-2-P0
+Opening Player-Data//2-2-128/Bits-2-P1
+Opening Player-Data//2-Z64,64-64/Bits-Z64,64-P0
+Opening Player-Data//2-Z64,64-64/Bits-Z64,64-P1
+Opening Player-Data//2-2-128/Squares-2-P0
+Opening Player-Data//2-2-128/Squares-2-P1
+Opening Player-Data//2-Z64,64-64/Squares-Z64,64-P0
+Opening Player-Data//2-Z64,64-64/Squares-Z64,64-P1
+Opening Player-Data//2-2-128/Inputs-2-P0-0
+Opening Player-Data//2-2-128/Inputs-2-P1-0
+Opening Player-Data//2-2-128/Inputs-2-P0-1
+Opening Player-Data//2-2-128/Inputs-2-P1-1
+Opening Player-Data//2-Z64,64-64/Inputs-Z64,64-P0-0
+Opening Player-Data//2-Z64,64-64/Inputs-Z64,64-P1-0
+Opening Player-Data//2-Z64,64-64/Inputs-Z64,64-P0-1
+Opening Player-Data//2-Z64,64-64/Inputs-Z64,64-P1-1
+Opening Player-Data//2-2-128/Inverses-2-P0
+Opening Player-Data//2-2-128/Inverses-2-P1
+Opening Player-Data//2-DDB-64/Triples-DDB-P0
+Opening Player-Data//2-DDB-64/Triples-DDB-P1
+Opening Player-Data//2-DDB-64/Bits-DDB-P0
+Opening Player-Data//2-DDB-64/Bits-DDB-P1
+Opening Player-Data//2-DDB-64/Inputs-DDB-P0-0
+Opening Player-Data//2-DDB-64/Inputs-DDB-P1-0
+Opening Player-Data//2-DDB-64/Inputs-DDB-P0-1
+Opening Player-Data//2-DDB-64/Inputs-DDB-P1-1
+Opening Player-Data//2-DB-64/Triples-DB-P0
+Opening Player-Data//2-DB-64/Triples-DB-P1
+Opening Player-Data//2-DB-64/Bits-DB-P0
+Opening Player-Data//2-DB-64/Bits-DB-P1
+No MAC key share for player 0, generating a fresh ones
+Written new MAC key share to Player-Data//2-T-64//Player-MAC-Keys-R-P0
+ Key 0: 1380501326420
+Written new MAC key share to Player-Data//2-T-64//Player-MAC-Keys-R-P1
+ Key 1: 1176921293826
+--------------
+Final Key: 358399364694
+Opening Player-Data//2-T-64/Triples-T-P0
+Opening Player-Data//2-T-64/Triples-T-P1
+Opening Player-Data//2-T-64/Bits-T-P0
+Opening Player-Data//2-T-64/Bits-T-P1
+Opening Player-Data//2-T-64/Inputs-T-P0-0
+Opening Player-Data//2-T-64/Inputs-T-P1-0
+Opening Player-Data//2-T-64/Inputs-T-P0-1
+Opening Player-Data//2-T-64/Inputs-T-P1-1
+No MAC key share for player 0, generating a fresh ones
+Written new MAC key share to Player-Data//2-TT-8//Player-MAC-Keys-2-P0
+ Key 0: d3e06dbb99
+Written new MAC key share to Player-Data//2-TT-8//Player-MAC-Keys-2-P1
+ Key 1: 976fabe7d7
+--------------
+Final Key: 448fc65c4e
+Opening Player-Data//2-TT-8/Triples-TT-P0
+Opening Player-Data//2-TT-8/Triples-TT-P1
+Opening Player-Data//2-TT-8/Bits-TT-P0
+Opening Player-Data//2-TT-8/Bits-TT-P1
+Opening Player-Data//2-TT-8/Inputs-TT-P0-0
+Opening Player-Data//2-TT-8/Inputs-TT-P1-0
+Opening Player-Data//2-TT-8/Inputs-TT-P0-1
+Opening Player-Data//2-TT-8/Inputs-TT-P1-1
+Opening Player-Data//2-Z64,64-64/daBits-Z64,64-P0
+Opening Player-Data//2-Z64,64-64/daBits-Z64,64-P1
+Opening Player-Data//2-D2-128/Triples-D2-P0
+Opening Player-Data//2-D2-128/Triples-D2-P1
+Opening Player-Data//2-D2-128/Bits-D2-P0
+Opening Player-Data//2-D2-128/Bits-D2-P1
+Opening Player-Data//2-D2-128/Inputs-D2-P0-0
+Opening Player-Data//2-D2-128/Inputs-D2-P1-0
+Opening Player-Data//2-D2-128/Inputs-D2-P0-1
+Opening Player-Data//2-D2-128/Inputs-D2-P1-1
+Opening Player-Data//2-D2-128/Squares-D2-P0
+Opening Player-Data//2-D2-128/Squares-D2-P1
+Opening Player-Data//2-D2-128/daBits-D2-P0
+Opening Player-Data//2-D2-128/daBits-D2-P1
+Opening Player-Data//2-D2-128/Inverses-D2-P0
+Opening Player-Data//2-D2-128/Inverses-D2-P1
+Opening Player-Data//2-DD2-128/Triples-DD2-P0
+Opening Player-Data//2-DD2-128/Triples-DD2-P1
+Opening Player-Data//2-DD2-128/Bits-DD2-P0
+Opening Player-Data//2-DD2-128/Bits-DD2-P1
+Opening Player-Data//2-DD2-128/Inputs-DD2-P0-0
+Opening Player-Data//2-DD2-128/Inputs-DD2-P1-0
+Opening Player-Data//2-DD2-128/Inputs-DD2-P0-1
+Opening Player-Data//2-DD2-128/Inputs-DD2-P1-1
+Opening Player-Data//2-DD2-128/Squares-DD2-P0
+Opening Player-Data//2-DD2-128/Squares-DD2-P1
+Opening Player-Data//2-DD2-128/daBits-DD2-P0
+Opening Player-Data//2-DD2-128/daBits-DD2-P1
+Opening Player-Data//2-DD2-128/Inverses-DD2-P0
+Opening Player-Data//2-DD2-128/Inverses-DD2-P1
+Opening Player-Data//2-D2-40/Triples-D2-P0
+Opening Player-Data//2-D2-40/Triples-D2-P1
+Opening Player-Data//2-D2-40/Bits-D2-P0
+Opening Player-Data//2-D2-40/Bits-D2-P1
+Opening Player-Data//2-D2-40/Inputs-D2-P0-0
+Opening Player-Data//2-D2-40/Inputs-D2-P1-0
+Opening Player-Data//2-D2-40/Inputs-D2-P0-1
+Opening Player-Data//2-D2-40/Inputs-D2-P1-1
+Opening Player-Data//2-D2-40/Squares-D2-P0
+Opening Player-Data//2-D2-40/Squares-D2-P1
+Opening Player-Data//2-D2-40/daBits-D2-P0
+Opening Player-Data//2-D2-40/daBits-D2-P1
+Opening Player-Data//2-D2-40/Inverses-D2-P0
+Opening Player-Data//2-D2-40/Inverses-D2-P1
+Opening Player-Data//2-DD2-40/Triples-DD2-P0
+Opening Player-Data//2-DD2-40/Triples-DD2-P1
+Opening Player-Data//2-DD2-40/Bits-DD2-P0
+Opening Player-Data//2-DD2-40/Bits-DD2-P1
+Opening Player-Data//2-DD2-40/Inputs-DD2-P0-0
+Opening Player-Data//2-DD2-40/Inputs-DD2-P1-0
+Opening Player-Data//2-DD2-40/Inputs-DD2-P0-1
+Opening Player-Data//2-DD2-40/Inputs-DD2-P1-1
+Opening Player-Data//2-DD2-40/Squares-DD2-P0
+Opening Player-Data//2-DD2-40/Squares-DD2-P1
+Opening Player-Data//2-DD2-40/daBits-DD2-P0
+Opening Player-Data//2-DD2-40/daBits-DD2-P1
+Opening Player-Data//2-DD2-40/Inverses-DD2-P0
+Opening Player-Data//2-DD2-40/Inverses-DD2-P1
+Opening Player-Data//2-DR-64/Triples-DR-P0
+Opening Player-Data//2-DR-64/Triples-DR-P1
+Opening Player-Data//2-DR-64/Bits-DR-P0
+Opening Player-Data//2-DR-64/Bits-DR-P1
+Opening Player-Data//2-DR-64/Inputs-DR-P0-0
+Opening Player-Data//2-DR-64/Inputs-DR-P1-0
+Opening Player-Data//2-DR-64/Inputs-DR-P0-1
+Opening Player-Data//2-DR-64/Inputs-DR-P1-1
+Opening Player-Data//2-DR-64/Squares-DR-P0
+Opening Player-Data//2-DR-64/Squares-DR-P1
+Opening Player-Data//2-DR-64/daBits-DR-P0
+Opening Player-Data//2-DR-64/daBits-DR-P1
+Opening Player-Data//2-DDR-64/Triples-DDR-P0
+Opening Player-Data//2-DDR-64/Triples-DDR-P1
+Opening Player-Data//2-DDR-64/Bits-DDR-P0
+Opening Player-Data//2-DDR-64/Bits-DDR-P1
+Opening Player-Data//2-DDR-64/Inputs-DDR-P0-0
+Opening Player-Data//2-DDR-64/Inputs-DDR-P1-0
+Opening Player-Data//2-DDR-64/Inputs-DDR-P0-1
+Opening Player-Data//2-DDR-64/Inputs-DDR-P1-1
+Opening Player-Data//2-DDR-64/Squares-DDR-P0
+Opening Player-Data//2-DDR-64/Squares-DDR-P1
+Opening Player-Data//2-DDR-64/daBits-DDR-P0
+Opening Player-Data//2-DDR-64/daBits-DDR-P1
+Opening Player-Data//2-DR-128/Triples-DR-P0
+Opening Player-Data//2-DR-128/Triples-DR-P1
+Opening Player-Data//2-DR-128/Bits-DR-P0
+Opening Player-Data//2-DR-128/Bits-DR-P1
+Opening Player-Data//2-DR-128/Inputs-DR-P0-0
+Opening Player-Data//2-DR-128/Inputs-DR-P1-0
+Opening Player-Data//2-DR-128/Inputs-DR-P0-1
+Opening Player-Data//2-DR-128/Inputs-DR-P1-1
+Opening Player-Data//2-DR-128/Squares-DR-P0
+Opening Player-Data//2-DR-128/Squares-DR-P1
+Opening Player-Data//2-DR-128/daBits-DR-P0
+Opening Player-Data//2-DR-128/daBits-DR-P1
+Opening Player-Data//2-DDR-128/Triples-DDR-P0
+Opening Player-Data//2-DDR-128/Triples-DDR-P1
+Opening Player-Data//2-DDR-128/Bits-DDR-P0
+Opening Player-Data//2-DDR-128/Bits-DDR-P1
+Opening Player-Data//2-DDR-128/Inputs-DDR-P0-0
+Opening Player-Data//2-DDR-128/Inputs-DDR-P1-0
+Opening Player-Data//2-DDR-128/Inputs-DDR-P0-1
+Opening Player-Data//2-DDR-128/Inputs-DDR-P1-1
+Opening Player-Data//2-DDR-128/Squares-DDR-P0
+Opening Player-Data//2-DDR-128/Squares-DDR-P1
+Opening Player-Data//2-DDR-128/daBits-DDR-P0
+Opening Player-Data//2-DDR-128/daBits-DDR-P1

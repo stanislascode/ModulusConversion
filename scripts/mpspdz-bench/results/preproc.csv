@@ -1,3 +1,5 @@
-protocol,parties,beta,batch,ping_ms,bandwidth,net_emulated,time_s,mb_party0,rounds,mismatches
-modconv1,2,2,1000,1,1gbit,yes,37.4253,1344.44,176,0
-modconv2,2,4,1000,1,1gbit,yes,6.37425,272.747,33,0
+protocol,parties,beta,batch,ping_ms,bandwidth,net_emulated,generation,time_s,mb_party0,rounds,mismatches
+modconv1,2,2,1000,1,1gbit,yes,excluded,0.00148612,0,0,0
+modconv2,2,4,1000,1,1gbit,yes,excluded,0.0451927,1.552,3,0
+modconv1,2,2,1000,1,1gbit,yes,included,37.2695,1344.44,176,0
+modconv2,2,4,1000,1,1gbit,yes,included,6.31172,272.747,33,0

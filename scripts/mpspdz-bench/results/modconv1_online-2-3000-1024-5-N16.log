@@ -1,0 +1,46 @@
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 0 -N 16 -d -F modconv1_online-2-3000-1024-5 -pn 11327 -h localhost -N 16
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 1 -N 16 -d -F modconv1_online-2-3000-1024-5 -pn 11327 -h localhost -N 16
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 2 -N 16 -d -F modconv1_online-2-3000-1024-5 -pn 11327 -h localhost -N 16
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 3 -N 16 -d -F modconv1_online-2-3000-1024-5 -pn 11327 -h localhost -N 16
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 4 -N 16 -d -F modconv1_online-2-3000-1024-5 -pn 11327 -h localhost -N 16
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 5 -N 16 -d -F modconv1_online-2-3000-1024-5 -pn 11327 -h localhost -N 16
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 6 -N 16 -d -F modconv1_online-2-3000-1024-5 -pn 11327 -h localhost -N 16
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 7 -N 16 -d -F modconv1_online-2-3000-1024-5 -pn 11327 -h localhost -N 16
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 8 -N 16 -d -F modconv1_online-2-3000-1024-5 -pn 11327 -h localhost -N 16
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 9 -N 16 -d -F modconv1_online-2-3000-1024-5 -pn 11327 -h localhost -N 16
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 10 -N 16 -d -F modconv1_online-2-3000-1024-5 -pn 11327 -h localhost -N 16
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 11 -N 16 -d -F modconv1_online-2-3000-1024-5 -pn 11327 -h localhost -N 16
+Using SPDZ2k security parameter 64
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 12 -N 16 -d -F modconv1_online-2-3000-1024-5 -pn 11327 -h localhost -N 16
+Using statistical security parameter Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 13 -N 16 -d -F modconv1_online-2-3000-1024-5 -pn 11327 -h localhost -N 16
+40
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 14 -N 16 -d -F modconv1_online-2-3000-1024-5 -pn 11327 -h localhost -N 16
+Running /home/mpspdz/mp-spdz-0.3.8/Scripts/../spdz2k-party.x 15 -N 16 -d -F modconv1_online-2-3000-1024-5 -pn 11327 -h localhost -N 16
+Trying to run 64-bit computation
+Starting timer 1 at 0 (0 MB, 0 rounds) after 4.2354e-05
+Stopped timer 1 at 7.44997 (1.7496 MB, 66 rounds)
+batch: 3000  threads: 5
+mismatches: 0
+Tinier open counter: 0
+SPDZ gf2n_long open counter: 0
+SPDZ2^(64+64) open counter: 1
+Tinier open counter: 0
+SPDZ gf2n_long open counter: 0
+SPDZ2^(64+64) open counter: 4
+Tinier open counter: 0
+SPDZ gf2n_long open counter: 0
+SPDZ2^(64+64) open counter: 4
+Tinier open counter: 0
+SPDZ gf2n_long open counter: 0
+SPDZ2^(64+64) open counter: 4
+Tinier open counter: 0
+SPDZ gf2n_long open counter: 0
+SPDZ2^(64+64) open counter: 4
+Tinier open counter: 0
+SPDZ gf2n_long open counter: 0
+SPDZ2^(64+64) open counter: 4
+The following benchmarks are excluding preprocessing (offline phase).
+Time = 17.6981 seconds 
+Time1 = 7.44997 seconds (1.7496 MB, 66 rounds)
+Data sent = 6.04404 MB in ~148 rounds (party 0 only; use '-v' for more details)
+Global data sent = 49.8182 MB (all parties)

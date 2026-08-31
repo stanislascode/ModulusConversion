@@ -1,74 +1,57 @@
 WARNING: insecure preprocessing
-No MAC key share for player 0, generating a fresh ones
-Written new MAC key share to Player-Data//16-Z64,64-64//Player-MAC-Keys-R-P0
  Key 0: 5170065754576292351
-Written new MAC key share to Player-Data//16-Z64,64-64//Player-MAC-Keys-R-P1
  Key 1: 9560027091986434169
-Written new MAC key share to Player-Data//16-Z64,64-64//Player-MAC-Keys-R-P2
  Key 2: 16256135806544904457
-Written new MAC key share to Player-Data//16-Z64,64-64//Player-MAC-Keys-R-P3
  Key 3: 4028040129959616610
-Written new MAC key share to Player-Data//16-Z64,64-64//Player-MAC-Keys-R-P4
  Key 4: 15504154457723567656
-Written new MAC key share to Player-Data//16-Z64,64-64//Player-MAC-Keys-R-P5
  Key 5: 7741130066803308644
-Written new MAC key share to Player-Data//16-Z64,64-64//Player-MAC-Keys-R-P6
  Key 6: 14653334966130269625
-Written new MAC key share to Player-Data//16-Z64,64-64//Player-MAC-Keys-R-P7
  Key 7: 18289424902950887517
-Written new MAC key share to Player-Data//16-Z64,64-64//Player-MAC-Keys-R-P8
  Key 8: 11830643899141736767
-Written new MAC key share to Player-Data//16-Z64,64-64//Player-MAC-Keys-R-P9
  Key 9: 9471749686754460626
-Written new MAC key share to Player-Data//16-Z64,64-64//Player-MAC-Keys-R-P10
  Key 10: 825479139857169116
-Written new MAC key share to Player-Data//16-Z64,64-64//Player-MAC-Keys-R-P11
  Key 11: 1655520116714105321
-Written new MAC key share to Player-Data//16-Z64,64-64//Player-MAC-Keys-R-P12
  Key 12: 7602960509150423951
-Written new MAC key share to Player-Data//16-Z64,64-64//Player-MAC-Keys-R-P13
  Key 13: 13918891057466615388
-Written new MAC key share to Player-Data//16-Z64,64-64//Player-MAC-Keys-R-P14
  Key 14: 577273511525905561
-Written new MAC key share to Player-Data//16-Z64,64-64//Player-MAC-Keys-R-P15
  Key 15: 17718800382657523292
 --------------
 Final Key: 154803631479943221051
 No MAC key share for player 0, generating a fresh ones
 Written new MAC key share to Player-Data//16-2-128//Player-MAC-Keys-2-P0
- Key 0: 3223f3fe62432012cb9ec9b3b81d8900
+ Key 0: 2e060b94bf70a3d243ba0100f52b2114
 Written new MAC key share to Player-Data//16-2-128//Player-MAC-Keys-2-P1
- Key 1: 2d22edadb95479c9898c327cbae4eca3
+ Key 1: 9a6079a1e326da67bb5077878671bc8b
 Written new MAC key share to Player-Data//16-2-128//Player-MAC-Keys-2-P2
- Key 2: 55430ea7917e4958d0df1033e136f1f8
+ Key 2: 6b8586a14b5e47e2cae88021499b4c23
 Written new MAC key share to Player-Data//16-2-128//Player-MAC-Keys-2-P3
- Key 3: 2a462a56a24250d7de2e39123ca39b95
+ Key 3: 6f58dcc531b322d248e08ded6580e17a
 Written new MAC key share to Player-Data//16-2-128//Player-MAC-Keys-2-P4
- Key 4: 2c5c2d5d1dc29874fab640dd20355ff0
+ Key 4: 6c4dca7dc80d86232211b4c914171946
 Written new MAC key share to Player-Data//16-2-128//Player-MAC-Keys-2-P5
- Key 5: fb2285a52a5e83d44772eff6dca38425
+ Key 5: e544f40026dc210371a086073c9e83b9
 Written new MAC key share to Player-Data//16-2-128//Player-MAC-Keys-2-P6
- Key 6: ec81a06260cf7a78815395dd8b6966fe
+ Key 6: 1d6e58c2cfb529c72b553106ceea76b9
 Written new MAC key share to Player-Data//16-2-128//Player-MAC-Keys-2-P7
- Key 7: 77daa0cf7049a362423648db55e1919c
+ Key 7: ceb347288517b52ad3770f873bbd7fd4
 Written new MAC key share to Player-Data//16-2-128//Player-MAC-Keys-2-P8
- Key 8: 9d6f63d18f40c9fca7af8e0c92b1c557
+ Key 8: f5a08e63ed77f4269079cbd9657add3e
 Written new MAC key share to Player-Data//16-2-128//Player-MAC-Keys-2-P9
- Key 9: 48ac0f1571632c82a4aec77a23724393
+ Key 9: 62a4a3d23603bee66a2f052eb6552214
 Written new MAC key share to Player-Data//16-2-128//Player-MAC-Keys-2-P10
- Key 10: 7f8e0fb6361c352b1de946c06003f0bc
+ Key 10: 62a2959ba75c2b150525b3936fe5e59b
 Written new MAC key share to Player-Data//16-2-128//Player-MAC-Keys-2-P11
- Key 11: e3e54c0503a5c0ed93112d661f5510cb
+ Key 11: a5c599ad4c7da570979bf27a927f72b7
 Written new MAC key share to Player-Data//16-2-128//Player-MAC-Keys-2-P12
- Key 12: e7c6e7ad543cf3b49803569466bb1854
+ Key 12: ae0c7885c2a0b8c625f0ab9069b59412
 Written new MAC key share to Player-Data//16-2-128//Player-MAC-Keys-2-P13
- Key 13: faa4f4db15c8f0d2686518bb5a0c3cfa
+ Key 13: f88f2b3b3b0945cdf319c0a706b77b59
 Written new MAC key share to Player-Data//16-2-128//Player-MAC-Keys-2-P14
- Key 14: 51cc3c79c98d8c5ecd37dec1b323ed36
+ Key 14: 3610121462c055c60ed028fda38dbcfa
 Written new MAC key share to Player-Data//16-2-128//Player-MAC-Keys-2-P15
- Key 15: 60e10059094c09f205f99f127b743bd7
+ Key 15: 5e56c87c26841359cd466326d8d537ce
 --------------
-Final Key: 49c692d6859e149c87138defc707b785
+Final Key: 84c9a1970f705879ace6d8f6b870af2d
 Opening Player-Data//16-2-128/Triples-2-P0
 Opening Player-Data//16-2-128/Triples-2-P1
 Opening Player-Data//16-2-128/Triples-2-P2
@@ -1015,39 +998,39 @@ Opening Player-Data//16-DB-64/Bits-DB-P14
 Opening Player-Data//16-DB-64/Bits-DB-P15
 No MAC key share for player 0, generating a fresh ones
 Written new MAC key share to Player-Data//16-T-64//Player-MAC-Keys-R-P0
- Key 0: 474268135532
+ Key 0: 1935034559549
 Written new MAC key share to Player-Data//16-T-64//Player-MAC-Keys-R-P1
- Key 1: 1602436276321
+ Key 1: 686880156041
 Written new MAC key share to Player-Data//16-T-64//Player-MAC-Keys-R-P2
- Key 2: 1719254243642
+ Key 2: 2116398671848
 Written new MAC key share to Player-Data//16-T-64//Player-MAC-Keys-R-P3
- Key 3: 1257168347767
+ Key 3: 2063607772673
 Written new MAC key share to Player-Data//16-T-64//Player-MAC-Keys-R-P4
- Key 4: 589275236033
+ Key 4: 1029072909106
 Written new MAC key share to Player-Data//16-T-64//Player-MAC-Keys-R-P5
- Key 5: 1590047248052
+ Key 5: 36706905247
 Written new MAC key share to Player-Data//16-T-64//Player-MAC-Keys-R-P6
- Key 6: 1707722742544
+ Key 6: 682484727781
 Written new MAC key share to Player-Data//16-T-64//Player-MAC-Keys-R-P7
- Key 7: 1403888778808
+ Key 7: 66884830938
 Written new MAC key share to Player-Data//16-T-64//Player-MAC-Keys-R-P8
- Key 8: 157430032407
+ Key 8: 428973488948
 Written new MAC key share to Player-Data//16-T-64//Player-MAC-Keys-R-P9
- Key 9: 132644162188
+ Key 9: 2039929671306
 Written new MAC key share to Player-Data//16-T-64//Player-MAC-Keys-R-P10
- Key 10: 1875939068552
+ Key 10: 1043353863784
 Written new MAC key share to Player-Data//16-T-64//Player-MAC-Keys-R-P11
- Key 11: 1209321045172
+ Key 11: 200853648816
 Written new MAC key share to Player-Data//16-T-64//Player-MAC-Keys-R-P12
- Key 12: 493543052879
+ Key 12: 1986033815354
 Written new MAC key share to Player-Data//16-T-64//Player-MAC-Keys-R-P13
- Key 13: 1955142138039
+ Key 13: 459840755889
 Written new MAC key share to Player-Data//16-T-64//Player-MAC-Keys-R-P14
- Key 14: 218525820734
+ Key 14: 1447004611471
 Written new MAC key share to Player-Data//16-T-64//Player-MAC-Keys-R-P15
- Key 15: 1683723940767
+ Key 15: 993904089625
 --------------
-Final Key: 478144225021
+Final Key: 1823801689512
 Opening Player-Data//16-T-64/Triples-T-P0
 Opening Player-Data//16-T-64/Triples-T-P1
 Opening Player-Data//16-T-64/Triples-T-P2
@@ -1338,39 +1321,39 @@ Opening Player-Data//16-T-64/Inputs-T-P14-15
 Opening Player-Data//16-T-64/Inputs-T-P15-15
 No MAC key share for player 0, generating a fresh ones
 Written new MAC key share to Player-Data//16-TT-8//Player-MAC-Keys-2-P0
- Key 0: 4eb40c301a
+ Key 0: b1966c8339
 Written new MAC key share to Player-Data//16-TT-8//Player-MAC-Keys-2-P1
- Key 1: 321763e6e1
+ Key 1: 6baccb3407
 Written new MAC key share to Player-Data//16-TT-8//Player-MAC-Keys-2-P2
- Key 2: ea4e2b65a0
+ Key 2: 471941ce80
 Written new MAC key share to Player-Data//16-TT-8//Player-MAC-Keys-2-P3
- Key 3: fdbb46a650
+ Key 3: 5786d7c2fa
 Written new MAC key share to Player-Data//16-TT-8//Player-MAC-Keys-2-P4
- Key 4: 9df5fa6fcb
+ Key 4: bff73c74b4
 Written new MAC key share to Player-Data//16-TT-8//Player-MAC-Keys-2-P5
- Key 5: dc808b4178
+ Key 5: 1835a72f8b
 Written new MAC key share to Player-Data//16-TT-8//Player-MAC-Keys-2-P6
- Key 6: 2e19f6074b
+ Key 6: 79fa12e14f
 Written new MAC key share to Player-Data//16-TT-8//Player-MAC-Keys-2-P7
- Key 7: f045f6b0a0
+ Key 7: 62d9a4f6fe
 Written new MAC key share to Player-Data//16-TT-8//Player-MAC-Keys-2-P8
- Key 8: 2e598cf78e
+ Key 8: bd28f65e50
 Written new MAC key share to Player-Data//16-TT-8//Player-MAC-Keys-2-P9
- Key 9: 861798cca
+ Key 9: bbf81351a8
 Written new MAC key share to Player-Data//16-TT-8//Player-MAC-Keys-2-P10
- Key 10: 2d8e4930fc
+ Key 10: cab97beb3e
 Written new MAC key share to Player-Data//16-TT-8//Player-MAC-Keys-2-P11
- Key 11: 2db019fb6c
+ Key 11: 86a85e98eb
 Written new MAC key share to Player-Data//16-TT-8//Player-MAC-Keys-2-P12
- Key 12: 512e88322c
+ Key 12: f14ba3d7f6
 Written new MAC key share to Player-Data//16-TT-8//Player-MAC-Keys-2-P13
- Key 13: 206e10005e
+ Key 13: a607dcfcc9
 Written new MAC key share to Player-Data//16-TT-8//Player-MAC-Keys-2-P14
- Key 14: 7f000c7eb0
+ Key 14: 5087a19ca3
 Written new MAC key share to Player-Data//16-TT-8//Player-MAC-Keys-2-P15
- Key 15: bbccbbda88
+ Key 15: 143a84e8fa
 --------------
-Final Key: 67f5f9aacd
+Final Key: 2f7486d481
 Opening Player-Data//16-TT-8/Triples-TT-P0
 Opening Player-Data//16-TT-8/Triples-TT-P1
 Opening Player-Data//16-TT-8/Triples-TT-P2
@@ -3053,39 +3036,39 @@ Opening Player-Data//16-MS2-128/Inverses-MS2-P14
 Opening Player-Data//16-MS2-128/Inverses-MS2-P15
 No MAC key share for player 0, generating a fresh ones
 Written new MAC key share to Player-Data//16-SYMS2-128//Player-MAC-Keys-MS2-P0
- Key 0: 8daed3dbce514d7b06194ca410347553
+ Key 0: 3c24d49794e3e0ed75e3d086236b5d5b
 Written new MAC key share to Player-Data//16-SYMS2-128//Player-MAC-Keys-MS2-P1
- Key 1: d347daa5fa1e33a76b0e17f1692d0a0a
+ Key 1: c3e475b941f26c9ca782763f9c9a04d3
 Written new MAC key share to Player-Data//16-SYMS2-128//Player-MAC-Keys-MS2-P2
- Key 2: fefb368d301cc97f7c943697045db200
+ Key 2: 5e04af421bffea5894f17b604c73e23f
 Written new MAC key share to Player-Data//16-SYMS2-128//Player-MAC-Keys-MS2-P3
- Key 3: a4e4ad4a78179b6a6dc50281033397a4
+ Key 3: 32f0b9217e467521a8a28a8e92da4562
 Written new MAC key share to Player-Data//16-SYMS2-128//Player-MAC-Keys-MS2-P4
- Key 4: 0264912f334295db5e712c280f1fea6a
+ Key 4: f4b5937f05e0035c24a6e804b0407a0e
 Written new MAC key share to Player-Data//16-SYMS2-128//Player-MAC-Keys-MS2-P5
- Key 5: 8474e7e19fda7446a3ff952d621eecc1
+ Key 5: 4a9584e23ba8ccec3cae74380a063c14
 Written new MAC key share to Player-Data//16-SYMS2-128//Player-MAC-Keys-MS2-P6
- Key 6: 17622b5e591eb0344cfa85c61323f398
+ Key 6: e499fa9cb37a70cefd21c7efe60f3faa
 Written new MAC key share to Player-Data//16-SYMS2-128//Player-MAC-Keys-MS2-P7
- Key 7: d70da271a43e617c90ed411c8a59250d
+ Key 7: a87f0e1efb1baec51c3164f67bce9353
 Written new MAC key share to Player-Data//16-SYMS2-128//Player-MAC-Keys-MS2-P8
- Key 8: 8a9cb1665d0d825c69a8bea12e13946a
+ Key 8: 4a59df282ded19ee8dd9834d57d80ab5
 Written new MAC key share to Player-Data//16-SYMS2-128//Player-MAC-Keys-MS2-P9
- Key 9: fd18122fbd2d6ac122a24c9b5d16adb2
+ Key 9: 726be22e956c8c820264cdeeaa863ea1
 Written new MAC key share to Player-Data//16-SYMS2-128//Player-MAC-Keys-MS2-P10
- Key 10: 05334ddd24ad9288ebab13709cd4216d
+ Key 10: dcbc41a243cf7a155429a9da24d3815d
 Written new MAC key share to Player-Data//16-SYMS2-128//Player-MAC-Keys-MS2-P11
- Key 11: 66ca57fabddb980cfb6202e374e7d675
+ Key 11: fff551dea5207a0585a96aa95dbef605
 Written new MAC key share to Player-Data//16-SYMS2-128//Player-MAC-Keys-MS2-P12
- Key 12: 41c63374a60d7fc98c115388c01d239c
+ Key 12: 8177ca9b501936ad8554ce371c765b9c
 Written new MAC key share to Player-Data//16-SYMS2-128//Player-MAC-Keys-MS2-P13
- Key 13: 1b9c9d3c6ea8cdf273c18e25469c9af9
+ Key 13: 1fe4f0a07ebfe25d6c692659665158a8
 Written new MAC key share to Player-Data//16-SYMS2-128//Player-MAC-Keys-MS2-P14
- Key 14: ddc142f3231c70239f0c4fdc2755e7d4
+ Key 14: 9e60e41bf238e4d8f809716b09644fbb
 Written new MAC key share to Player-Data//16-SYMS2-128//Player-MAC-Keys-MS2-P15
- Key 15: d00260669a3cdbe2bddb0d534f225da8
+ Key 15: 844a9f928cbca164bf1a30df777b4a3b
 --------------
-Final Key: d16f388dbf133c1d66c06344b0ee1ab2
+Final Key: 7a7aa7084471a7e758237ca7b1af1bf5
 Opening Player-Data//16-SYMS2-128/Triples-SYMS2-P0
 Opening Player-Data//16-SYMS2-128/Triples-SYMS2-P1
 Opening Player-Data//16-SYMS2-128/Triples-SYMS2-P2
@@ -4768,39 +4751,39 @@ Opening Player-Data//16-MS2-40/Inverses-MS2-P14
 Opening Player-Data//16-MS2-40/Inverses-MS2-P15
 No MAC key share for player 0, generating a fresh ones
 Written new MAC key share to Player-Data//16-SYMS2-40//Player-MAC-Keys-MS2-P0
- Key 0: a78f3c3e36
+ Key 0: afc3a8524d
 Written new MAC key share to Player-Data//16-SYMS2-40//Player-MAC-Keys-MS2-P1
- Key 1: d7ae574ccb
+ Key 1: f62129315d
 Written new MAC key share to Player-Data//16-SYMS2-40//Player-MAC-Keys-MS2-P2
- Key 2: 32eba994bd
+ Key 2: 694385909b
 Written new MAC key share to Player-Data//16-SYMS2-40//Player-MAC-Keys-MS2-P3
- Key 3: 926cdd099a
+ Key 3: 94fb707b09
 Written new MAC key share to Player-Data//16-SYMS2-40//Player-MAC-Keys-MS2-P4
- Key 4: 3d9fa8f425
+ Key 4: 16bd62cf65
 Written new MAC key share to Player-Data//16-SYMS2-40//Player-MAC-Keys-MS2-P5
- Key 5: 71af2588e5
+ Key 5: ce90f2994
 Written new MAC key share to Player-Data//16-SYMS2-40//Player-MAC-Keys-MS2-P6
- Key 6: 9fbc30785
+ Key 6: 5849cfa724
 Written new MAC key share to Player-Data//16-SYMS2-40//Player-MAC-Keys-MS2-P7
- Key 7: ad4e29fd3d
+ Key 7: a9b888a8c4
 Written new MAC key share to Player-Data//16-SYMS2-40//Player-MAC-Keys-MS2-P8
- Key 8: 9e229893e6
+ Key 8: b232d4f07b
 Written new MAC key share to Player-Data//16-SYMS2-40//Player-MAC-Keys-MS2-P9
- Key 9: 7da269768f
+ Key 9: f697bb5cac
 Written new MAC key share to Player-Data//16-SYMS2-40//Player-MAC-Keys-MS2-P10
- Key 10: 1611886a4c
+ Key 10: 2cb453999c
 Written new MAC key share to Player-Data//16-SYMS2-40//Player-MAC-Keys-MS2-P11
- Key 11: f2d46b8564
+ Key 11: f4dd211251
 Written new MAC key share to Player-Data//16-SYMS2-40//Player-MAC-Keys-MS2-P12
- Key 12: cf4a22fd14
+ Key 12: 38af76dcc7
 Written new MAC key share to Player-Data//16-SYMS2-40//Player-MAC-Keys-MS2-P13
- Key 13: 6977dac489
+ Key 13: a02c0c9fc3
 Written new MAC key share to Player-Data//16-SYMS2-40//Player-MAC-Keys-MS2-P14
- Key 14: 4968e5feb7
+ Key 14: d81b649c0d
 Written new MAC key share to Player-Data//16-SYMS2-40//Player-MAC-Keys-MS2-P15
- Key 15: ccb892318d
+ Key 15: 53f1d05e51
 --------------
-Final Key: d03377a4c9
+Final Key: 93ab5d9980
 Opening Player-Data//16-SYMS2-40/Triples-SYMS2-P0
 Opening Player-Data//16-SYMS2-40/Triples-SYMS2-P1
 Opening Player-Data//16-SYMS2-40/Triples-SYMS2-P2
