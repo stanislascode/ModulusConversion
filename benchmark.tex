@@ -57,7 +57,7 @@ The measured round counts are MP-SPDZ's own, which count one round per polling i
 \begin{table}[tbp]
     \caption{%
         Cost of one decryption, timed phase only, converting from $\ints_{2^{63}}$ to $\ints_{2^{64}}$, under an emulated $1$~ms ping time and $1$~Gbit/sec bandwidth, as the median of five runs.
-        Openings are the protocol-level round complexity, against three sequential openings and two further rounds of authenticity checks in \cite{CCS:ZZLP25}.
+        Openings are the protocol-level round complexity, against three in \cite{CCS:ZZLP25}; the round trips actually spent are six, since SPDZ2k checks each opening's MAC before its value may feed the next, against five for \cite{CCS:ZZLP25}, which checks once at the end.
         Communication is $251.7(N-1)$ bytes in every row.
         Times are repeated from \cref{tab:benchmark-latency}; the $N = 16$ row is limited by the host, see \cref{sec:benchmark-caveats}.%
     }
@@ -248,11 +248,23 @@ The winning thread count is given in each cell for that reason.
 
 The honest summary is therefore not a ratio but a characterisation.
 Ours moves less data and needs fewer openings; theirs tolerates latency better because it pipelines.
-On a fast link with high latency they win, on a constrained link we win, and the protocol-level quantities --- two openings against three, $101$ bytes per party against $1.42$~kB --- are ours regardless of which implementation is measured.
+On a fast link with high latency they win, on a constrained link we win.
+The protocol-level quantities are ours regardless of which implementation is measured --- two openings against three, and $101$ bytes per decryption per party against $1.42$~kB --- but as the discussion of round trips below records, the first of those two is not what the latency figures currently reflect.
 
 Latency admits a cleaner comparison than throughput, because it is governed by round trips rather than by how fast a party computes or how deeply it pipelines.
 \Cref{tab:benchmark-latency} gives ours beside theirs.
-At $N = 4$ and a $1$~ms ping we are the faster, $6.79$~ms against $8.48$, which is two openings against three showing directly.
+At $N = 4$ and a $1$~ms ping we are the faster, $6.79$~ms against $8.48$.
+
+It is worth being exact about where that comes from, because the openings alone do not explain it.
+Fitting the measured times against the ping time gives the number of round trips actually spent: $6.00$ for $\Pi_\mathsf{ModConv1}$ and $\Pi_\mathsf{ModConv2}$ alike, at every party count, against $5.56$ for \cite{CCS:ZZLP25} --- which is its own stated ``three sequential public openings, and in this implementation, two more rounds of authenticity checks''.
+So we spend \emph{more} round trips than they do, not fewer, despite issuing two openings against their three, and are ahead at this point only on the constant.
+The reason is that SPDZ2k checks the MAC of an opened value before that value may influence a further secret computation, and our second opening consumes the first: the index $\alpha$ that selects the correction is derived from the opened $y$.
+Two openings that do not depend on each other cost what one costs --- we measure five of MP-SPDZ's rounds for either --- while two that do cost twice that, ten.
+Each of ours is therefore one round trip to reconstruct and two to check, where \cite{CCS:ZZLP25} opens three times and checks once at the end.
+
+The protocol-level advantage is real and the implementation spends it.
+Deferring the first check to the end is sound in the usual sense --- the opened $y$ is masked and reveals nothing, a forged share would select a wrong correction, and the final check would catch it before any output is released --- and would bring us to four round trips against their five.
+We have not implemented it, and the figures below are without it.
 At $10$~ms we are behind by about a tenth at $N = 4$ and $8$, and at $100$~ms by a similar margin --- except at $16$ parties, where the ordering reverses and we measure $639.7$~ms against their $811.8$, a fifth faster, because their cost grows with the party count at high ping and ours does not.
 Our $16$-party figures at $1$ and $10$~ms are the exception in the other direction and are not a comparison at all: they are limited by our host, as \cref{sec:benchmark-caveats} records.
 
@@ -281,11 +293,12 @@ That is a property of our harness and not of $\Pi_\mathsf{ModConv1}$ or $\Pi_\ma
 We have not implemented pipelining and make no claim about what it would give.
 
 \claude{%
-Every table is now filled from one run of the final harness: \texttt{tc} attached and its round-trip time checked against the nominal ping on every row, five repetitions per cell, both thread settings, and zero decryption errors across all 72 grid cells and all 36 latency cells.
-The result is not the clean win an earlier draft claimed, and \cref{sec:benchmark-comparison} now says so: we win at $100$~Mbit almost everywhere and lose the $1$~Gbit high-ping column badly, because they pipeline ten jobs and we run one batch.
-Four things to decide before this goes out.
-(i) The $1$~Gbit high-ping cells used a batch of $3000$, forced by disk. Re-running the grid at $10\,000$ should improve them about threefold and is the single cheapest thing left; it will not close the gap, but it removes an artefact of our own setup from a column we lose.
-(ii) The $N = 16$ latency cells at $1$ and $10$~ms are host-limited and are the worst numbers in the paper. Re-run those two on a quiet larger machine, or drop the column and say why.
-(iii) Consider whether to implement pipelining. It is the whole of the $1$~Gbit high-ping gap, it is a harness property rather than a protocol one, and \cref{sec:benchmark-caveats} currently concedes it without measuring it.
-(iv) Name our machine; theirs is a \texttt{c7a.32xlarge} with $128$ vCPUs against our $20$, and the throughput table is not interpretable without both.
+Every table is filled from one run of the final harness: \texttt{tc} attached and its round-trip time checked against the nominal ping on every row, five repetitions per cell, both thread settings, and zero decryption errors across all 72 grid cells and all 36 latency cells.
+The result is not the clean win an earlier draft claimed, and the section now says so.
+Five things to decide.
+(i) The deferred MAC check is the most valuable item here. We spend six round trips where they spend five, because SPDZ2k checks each opening before its value may feed the next and ours are dependent by construction --- I measured two independent openings costing five of MP-SPDZ's rounds and two dependent ones costing ten. Deferring the first check would give four against their five and improve the whole high-ping column by a third. Whether MP-SPDZ can be made to do it, I did not establish.
+(ii) The $1$~Gbit high-ping cells used a batch of $3000$, forced by disk. Re-running the grid at $10\,000$ should improve them about threefold; it will not close the gap, but it removes an artefact of our own setup from a column we lose.
+(iii) The $N = 16$ latency cells at $1$ and $10$~ms are host-limited and are the worst numbers in the paper. Re-run those two on a quiet larger machine, or drop the column and say why.
+(iv) Pipelining is the whole of the $1$~Gbit high-ping gap and is a harness property, not a protocol one. \Cref{sec:benchmark-caveats} concedes it without measuring it.
+(v) Name our machine; theirs is a \texttt{c7a.32xlarge} with $128$ vCPUs against our $20$, and the throughput table is not interpretable without both.
 }
