@@ -78,35 +78,47 @@ export MPSPDZ=$HOME/MP-SPDZ      # the directory containing compile.py
 ./run_benchmark.sh
 ```
 
-Three phases, four CSVs in `results/`:
+The default run reproduces Fhenix's own tables, so that every figure has a
+counterpart to be set against:
 
-| Phase | Output | Content |
-|---|---|---|
-| `throughput` | `throughput.csv`, `throughput-sweep.csv` | N=4, 1 ms, 1 Gbit: best decryptions/sec over a threads x batch sweep, plus every point of the sweep |
-| `latency` | `latency.csv` | one decryption, across ping {1,10,100} ms x parties {4,8,16} |
-| `grid` | `grid.csv` | throughput over bandwidth x ping x parties, at one fixed configuration |
-| `preproc` | `preproc.csv` | seconds for the batched preprocessing of `PREPROC_BATCH` decryptions, N=2, under both conventions |
+| Phase | Output | Their table | Content |
+|---|---|---|---|
+| `latency` | `latency.csv` | Table 2, and the latency column of Table 1 | one ciphertext, parties {4,8,16} x ping {1,10,100} ms |
+| `grid` | `grid.csv` | Table 3 | throughput, bandwidth {1 Gbit, 100 Mbit} x ping {1,10,100} ms x parties {4,8,16} |
+| `preproc` | `preproc.csv` | Table 5 | preprocessing per thousand decryptions, N=2, under both conventions |
+| `sweep` | `sweep.csv` | — | batch x threads at one network point; finds what a host is capable of. Not run by default. |
 
-Run one phase at a time with `PHASES="preproc" ./run_benchmark.sh`. Other knobs:
-`BATCHES` and `THREAD_LIST` (the sweep, defaults `"1000 5000 10000"` and
-`"1 2 4 5"`), `REPS` (repetitions per point, default 5, reported as a median),
-`PARTIES`, `PINGS`, `BANDWIDTHS`, `GRID_BATCH` and `GRID_THREADS` (the fixed
-configuration the grid holds), `PREPROC_BATCH`, `PREPROC_N`, `LWE_N`,
-`RESULTS`.
+Every cell of `latency` and `grid` is run at each value of `THREAD_LIST`
+(default `"1 5"`), so the single-threaded and multi-threaded figures sit side
+by side in the same file and can be compared without a second run.
 
-The two throughput phases answer different questions and neither replaces the
-other. `throughput` sweeps batch and threads at one network condition, to find
-the configuration a host is capable of. `grid` then holds that configuration
-fixed and moves the network across Fhenix's own grid, which is where a
-protocol's *communication per decryption* shows up rather than its host's
-core count: ours is about `101(N-1)/3` bytes per party, so the advantage is
-expected to widen as bandwidth falls. Set `GRID_BATCH` and `GRID_THREADS` from
-the winning row of `throughput.csv` before running it.
+```sh
+export MPSPDZ=$HOME/MP-SPDZ
+PHASES="check" ./run_benchmark.sh    # verify shaping over the whole grid first
+./run_benchmark.sh
+```
 
-Every row carries a `mismatches` column: the number of decryptions whose opened
-plaintext differs from the value fixed in the clear at compile time. Anything
-but `0` invalidates the row, and the sweep refuses to elect such a point as the
-best one.
+Knobs: `PARTIES`, `THREAD_LIST`, `REPS` (default 5, reported as a median),
+`LATENCY_PINGS`, `GRID_PINGS`, `BANDWIDTHS`, `GRID_BATCH` (default 10000),
+`BATCHES` and `SWEEP_N` (the sweep), `PREPROC_BATCH`, `PREPROC_N`, `LWE_N`,
+`SETTLE_S`, `RESULTS`.
+
+**Two costs to know before starting.** The grid is
+`|BW| x |PING| x |PARTIES| x |THREAD_LIST| x 2 protocols x REPS` runs — 360 at
+the defaults — so budget an hour or more, and drop `REPS` to 3 for a first
+look. And `Fake-Offline.x` is sized to the largest configuration per party
+count: at `N=16`, `beta=32` and `GRID_BATCH=10000` that is several gigabytes
+on disk. Check free space, or lower `GRID_BATCH`.
+
+Every row carries a `mismatches` column: the number of decryptions whose
+opened plaintext differs from the value fixed in the clear at compile time.
+Anything but `0` invalidates the row.
+
+**Latency is run at 1 Gbit only.** Fhenix reports a single decryption's
+latency to be bandwidth-independent, the protocol moving very little data, and
+our own byte counts agree — 252 bytes per party per peer, whatever the link.
+Their Table 2 gives 1 and 10 ms; we keep 100 ms because their raw logs supply
+it and it is where our round advantage is largest.
 
 ### The online phases read their preprocessing from disk
 
@@ -356,11 +368,11 @@ identical; only that one bit of the transcript differs from the real thing.
 
 ## Reading the CSV
 
-`throughput.csv` holds one row per protocol: the best point of the sweep, with
-the `batch` and `threads` that produced it and the median over `REPS` runs.
-`throughput-sweep.csv` holds every point, including failures and the raw
-per-run times, so the variance is visible rather than hidden behind the median.
-`latency.csv` records raw times too.
+All four CSVs share one row format, so they can be concatenated and filtered.
+Every row is the median of `REPS` runs and carries its own `raw_times_s`, so
+the spread is visible rather than hidden behind the median; `time_ms_median`
+is the figure to read for `latency`, `throughput_dec_per_sec` for `grid` and
+`sweep`.
 
 Three checks before a row is worth reporting:
 
