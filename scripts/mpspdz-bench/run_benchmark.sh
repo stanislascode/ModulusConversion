@@ -97,13 +97,19 @@ else
 fi
 
 rtt_now() {
-    command -v ping >/dev/null 2>&1 || { echo "n/a"; return; }
+    command -v ping >/dev/null 2>&1 || { echo ""; return; }
     ping -c 3 -q 127.0.0.1 2>/dev/null | tail -1 | awk -F'= ' '{print $2}' | cut -d/ -f2
 }
 
 # netem is attached with 'replace', which succeeds whether lo currently carries
 # noqueue, a stale netem, or nothing. 'add' fails on the first two with
 # "Exclusivity flag on, cannot modify", which stalled an earlier sweep.
+#
+# The measured RTT is then CHECKED, not merely printed. netem applies the delay
+# it is given, but ping also measures how long the kernel takes to answer, so a
+# loaded host inflates it: a stale set of parties still shutting down produced
+# 14.5 ms under a nominal 1 ms. A row taken then would carry a ping label it did
+# not experience, which is the one thing this harness exists to prevent.
 net() {
     [ "$HAVE_TC" -eq 1 ] || { EMU=no; return 0; }
     $TC qdisc replace dev lo root netem delay "$(awk "BEGIN{print $1/2}")ms" rate "$2"
@@ -112,7 +118,32 @@ net() {
         exit 1
     fi
     EMU=yes
-    echo "    network: asked ${1}ms/$2, measured loopback RTT $(rtt_now) ms"
+
+    local asked=$1 tol best="" m i
+    tol=$(awk "BEGIN{print $asked + ($asked*0.5 > 1 ? $asked*0.5 : 1)}")
+    for i in 1 2 3; do
+        m=$(rtt_now)
+        [ -z "$m" ] && { echo "    network: asked ${asked}ms/$2, ping unavailable"; return 0; }
+        if [ -z "$best" ] || [ "$(awk "BEGIN{print ($m < $best)}")" = 1 ]; then best=$m; fi
+        [ "$(awk "BEGIN{print ($m <= $tol)}")" = 1 ] && break
+        sleep 3
+    done
+
+    echo "    network: asked ${asked}ms/$2, measured loopback RTT $best ms"
+    if [ "$(awk "BEGIN{print ($best > $tol)}")" = 1 ]; then
+        echo >&2
+        echo "Refusing to run: loopback RTT is ${best} ms under a nominal ${asked} ms" >&2
+        echo "(tolerance ${tol} ms). netem is attached, so this is host load, not" >&2
+        echo "shaping -- most often parties from a previous run still exiting:" >&2
+        echo "    pgrep -c spdz2k-party.x   # should be 0" >&2
+        echo "    pkill -f spdz2k-party.x   # if it is not" >&2
+        echo "    uptime                    # load average should be near idle" >&2
+        echo "Every row measured now would carry a ping label it did not" >&2
+        echo "experience. Wait for the host to settle and re-run, or pass" >&2
+        echo "ALLOW_BAD_RTT=1 to record the rows anyway." >&2
+        [ "${ALLOW_BAD_RTT:-0}" = "1" ] || exit 1
+        EMU=degraded
+    fi
 }
 
 # ------------------------------------------------------------------ offline data
