@@ -98,7 +98,8 @@ PHASES="check" ./run_benchmark.sh    # verify shaping over the whole grid first
 ./run_benchmark.sh
 ```
 
-Knobs: `PARTIES`, `THREAD_LIST`, `REPS` (default 5, reported as a median),
+Knobs: `PARTIES`, `THREAD_LIST`, `FUSED_LIST` (default `"0 1"`, see below),
+`REPS` (default 5, reported as a median),
 `LATENCY_PINGS`, `GRID_PINGS`, `BANDWIDTHS`, `GRID_BATCH` (default 10000),
 `BATCHES` and `SWEEP_N` (the sweep), `PREPROC_BATCH`, `PREPROC_N`, `LWE_N`,
 `SETTLE_S`, `RESULTS`.
@@ -236,6 +237,50 @@ preprocessing and therefore cannot read it from a file.
 bytes per decryption at `N = 4`, scaling as `N - 1`, and 11 rounds regardless
 of batch size. Under threading the byte figure is party 0's share across tapes
 and is not comparable; compare it only at `threads=1`.
+
+### Fusing the openings
+
+The decryption issues two openings, but they are **dependent**: the index that
+selects the correction comes from the first opened value. MP-SPDZ checks an
+opened value's MAC before it may influence a further secret computation, so a
+dependent pair costs twice what an independent pair does. Measured at `N = 4`:
+
+| | MP-SPDZ rounds | round trips |
+|---|---|---|
+| two independent openings | 5 | 3 |
+| two dependent openings | 10 | 6 |
+
+Six round trips is what the latency data shows (fit the measured time against
+the ping time: 6.00 at every party count), against 5.56 for Fhenix, which
+opens three times and checks once at the end.
+
+`FUSED=1` removes the dependency. Instead of opening `y`, deriving `α` and then
+opening `x - (y - u_α)`, it opens `y` **together with** all `β` candidates
+`v_i = x + u_i`, which depend on nothing, and then computes
+`m = v_α - y` entirely in the clear. Every opening is issued in one round.
+
+Measured, `N = 4`, batch 1000:
+
+| | rounds | data/party | correctness |
+|---|---|---|---|
+| ModConv1, `FUSED=0` | 11 | 0.0964 MB | 0 mismatches |
+| ModConv1, `FUSED=1` | **6** | 0.1443 MB (×1.50) | 0 mismatches |
+| ModConv2 β=8, `FUSED=0` | 11 | 0.0964 MB | 0 mismatches |
+| ModConv2 β=8, `FUSED=1` | **6** | 0.4323 MB (×4.48) | 0 mismatches |
+
+The cost is `(β+1)/2` times the communication, because `β+1` values are opened
+where two were. That is **1.5× for ModConv1, whose β is 2 at every party
+count**, and 4.5×, 8.5×, 16.5× for ModConv2 at `N` = 4, 8, 16. ModConv1's fixed
+β is what makes it suited to this form and ModConv2's growing β what makes it
+unsuited — a protocol-level distinction, not an implementation one.
+
+It should not leak: the values opened are `x + u_i = (x + m) - c_i·Q` with
+`c_i` public, so they reveal exactly `x + m`, which the unfused protocol
+already reveals in full (`.reveal()` returns the whole 64-bit word; the
+`& (Q-1)` that follows is local). This is worth checking against the protocol
+as specified before it is relied on.
+
+`FUSED_LIST` (default `"0 1"`) runs both, so the trade can be read off one CSV.
 
 ### Threads per party
 

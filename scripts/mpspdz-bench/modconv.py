@@ -214,6 +214,31 @@ def to_array(vec, size):
     return a
 
 
+def decrypt_batch_fused(sk_arr, mu_arr, m_arr, u_arrs, beta, batch, c_bits, threads):
+    n_u = log2_exact(beta)
+    out = Array(batch, cint)
+
+    @multithread(threads, batch)
+    def _(base, size):
+        acc = None
+        for j in range(len(sk_arr)):
+            term = sk_arr[j] * cint(regint.get_random(c_bits, size=size))
+            acc = term if acc is None else acc + term
+        x = acc + mu_arr.get_vector(base, size) * Q
+
+        y_full = (x + m_arr.get_vector(base, size)).reveal()
+        vs = [(x + u_arrs[i].get_vector(base, size)).reveal() for i in range(beta)]
+
+        y = y_full & (Q - 1)
+        alpha = y >> (K_Q - n_u)
+        acc2 = (vs[0] - y) * (alpha == 0)
+        for i in range(1, beta):
+            acc2 = acc2 + (vs[i] - y) * (alpha == i)
+        out.assign_vector(acc2, base=base)
+
+    return out
+
+
 def decrypt_batch(sk_arr, mu_arr, m_arr, u_arrs, beta, batch, c_bits, threads):
     n_u = log2_exact(beta)
     out = Array(batch, cint)
